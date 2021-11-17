@@ -1,0 +1,2 @@
+class DeepQNetwork(object):
+    pass
