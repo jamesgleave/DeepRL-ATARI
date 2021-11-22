@@ -13,7 +13,7 @@ class Atari(object):
         # Returns initial state
         raise NotImplementedError
 
-    def step(self, action: int) -> tuple[np.array, float, bool]:
+    def step(self, action: int) -> tuple:
         # take a step in the env and return the next state, reward,
         # and if the game is done as a tuple
         raise NotImplementedError
