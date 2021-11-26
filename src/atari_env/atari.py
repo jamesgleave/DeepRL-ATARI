@@ -21,3 +21,7 @@ class Atari(object):
     def render(self):
         # Render the game state
         raise NotImplementedError
+
+    def get_image(self):
+        # return an image of the game state
+        raise NotImplementedError
