@@ -91,6 +91,24 @@ class DeepQNetwork(object):
         """
         return tf.keras.models.clone_model(self.Model)
 
+    def set_weights(self, model_weights:np.array):
+        """
+        Sets the weights of the DQN model.
+
+        Args:
+            model_weights (np.array): the model weights
+        """
+        self.Model.set_weights(model_weights)
+
+    def get_weights(self) -> np.array:
+        """
+        Gets the weights of the DQN model.
+
+        Returns:
+            (np.array): the model weights
+        """
+        return self.Model.get_weights(model_weights)
+
     def save_weights(self, filepath: str, *args, **kwargs):
         """
         Calls tf.keras.Model.save_weights() on the DQN model
