@@ -1,1 +1,1 @@
-from deep_q_network.deep_q_network import DeepQNetwork
+from . import deep_q_network
