@@ -1,4 +1,10 @@
+"""
+Code by: Jean Charle Yaacoub
+Implementation and wrapper for the DQN model from the Atari deepmind paper.
+"""
+
 import tensorflow as tf
+import numpy as np
 
 class DeepQNetwork(object):
     def __init__(self, num_actions: int, learning_rate=0.1, batch_size=32):
@@ -10,15 +16,13 @@ class DeepQNetwork(object):
             learning_rate (float, optional): Defaults to 0.1.
             batch_size (int, optional): Defaults to the size that is used in the paper.
         """
-        self.model = self.__build_model(num_actions)
+        self.Model = self.__build_model(num_actions)
 
-        self.__compile_model(learning_rate, batch_size)
-
-    def __compile_model(self, learning_rate, batch_size):
-        """
-        Compiles the built model with RMSProp
-        """
-        pass
+        # Compiling the model with RMSProp
+        self.Model.compile(optimizer=tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
+                            loss=tf.keras.losses.CategoricalCrossentropy(), 
+                            metrics=[tf.keras.metrics.MeanSquaredError(),
+                                    tf.keras.metrics.CategoricalAccuracy()])
 
     @staticmethod
     def __build_model(num_actions:int) -> tf.keras.Model:
@@ -59,22 +63,57 @@ class DeepQNetwork(object):
 
         return tf.keras.Model(inputs=input_lyr, outputs=x, name="ATARI_DQN")
 
-    def predict(self, x):
-        # Should be able to handle a single or batch input
-        # Should return the exact output of the network (ie do not argmax it)
-        raise NotImplementedError
+    def fit(self, *args, **kwargs):
+        """
+        Calls tf.keras.Model.fit() on the DQN model
+        """
+        self.Model.fit(*args, **kwargs)
 
-    def fit(self, x, y, **kwargs):
-        # Fit like keras (use whatever args you want)
-        raise NotImplementedError
+    def predict(self, x: np.array, *args, **kwargs) -> np.array:
+        """
+        Runs tf.keras.Model.predict()
+        
+        Args
+            x (np.array): Array of input samples (each sample is 4 frames of 84x84 crops)
 
-    def clone(self):
-        # Return a deep copy of this object
-        raise NotImplementedError
+        Returns:
+            np.array: The list of action-value predictions.
+        """
 
-    def set_weights(self, model):
-        # Set this models weights using the argument's weights
-        raise NotImplementedError
+        return self.Model.predict(x, *args, **kwargs)
+
+    def clone(self) -> tf.keras.Model:
+        """
+        Clones the DQN model with tf.keras.models.clone_model().
+
+        Returns:
+            tf.keras.Model: The deep clone of the model
+        """
+        return tf.keras.models.clone_model(self.Model)
+
+    def save_weights(self, filepath: str, *args, **kwargs):
+        """
+        Calls tf.keras.Model.save_weights() on the DQN model
+
+        Args:
+            filepath (str): path to save the weights file to.
+        """
+        self.Model.save_weights(filepath, *args, *kwargs)
+
+    def load_weights(self, filepath: str, *args, **kwargs):
+        """
+        Calls tf.keras.Model.load_weights() on the DQN model
+
+        Args:
+            filepath (str): path to load the weights file from.
+        """
+        self.Model.load_weights(filepath, *args, *kwargs)
+
+    def summary(self):
+        """
+        Runs built-in tf.keras.Model.summary() function on the DQN model
+        """
+        self.Model.summary()
 
 dqn = DeepQNetwork(10)
-print(dqn.model.summary())
+print(dqn.Model.summary())
