@@ -114,6 +114,3 @@ class DeepQNetwork(object):
         Runs built-in tf.keras.Model.summary() function on the DQN model
         """
         self.Model.summary()
-
-dqn = DeepQNetwork(10)
-print(dqn.Model.summary())
