@@ -12,10 +12,10 @@ class Atari(object):
         self.resized_width = resized_width
         self.resized_height = resized_height
 
-    def reset(self, **kwargs):
+    def reset(self, frame_skip=1, **kwargs):
         # Should reset the environment to the begining
         # Returns initial state
-        return self.env.reset()
+        return np.stack([self.get_preprocessed_frame(self.env.reset()) for _ in range(frame_skip)], axis=2).astype('float16')
 
     def num_actions_available(self):
         # Return total number of actions
@@ -58,9 +58,9 @@ class Atari(object):
             else:
                 total_reward += 0
 
-        stacked_images = np.stack(observations, axis=2)
+        stacked_images = np.stack(observations, axis=2).astype('float16')
 
-        return stacked_images, total_reward, done, lives
+        return stacked_images, total_reward, done
 
     def render(self):
         # Render the game state

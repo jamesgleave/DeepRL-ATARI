@@ -95,6 +95,7 @@ class DeepQAgent(object):
         Returns:
             np.array: [description]
         """
+
         return self.main_model.predict(state)
 
     def __get_pred_target(self, state: np.array) -> np.array:
@@ -125,9 +126,8 @@ class DeepQAgent(object):
             # Set episode values
             done = False
             current_step = 1
-            current_state = self.game.reset()
+            current_state = self.game.reset(frame_skip=self.main_model_train_horizon)
             total_episode_reward = 0
-
             while not done and self.game.max_steps > current_step:
                 # Choose an action and step with it
                 action = self.get_action(current_state)
@@ -166,6 +166,12 @@ class DeepQAgent(object):
                 # Update the frame counter
                 self.frame_count += 1
 
+            print(f"Total Episode Rewards: {total_episode_reward}")
+            print(f"Replay Memory Size: {len(self.replay_memory)}")
+            print(f"Frame Count: {self.frame_count}")
+            print(f"Epsilon: {self.current_epsilon}")
+            print()
+
     def get_action(self, state: np.array) -> int:
         """[summary]
 
@@ -176,7 +182,7 @@ class DeepQAgent(object):
             int: [description]
         """
         if np.random.random() > self.current_epsilon:
-            return np.argmax(self.__get_pred_main(state))
+            return np.argmax(self.__get_pred_main(np.expand_dims(state, axis=0)))
         return np.random.randint(0, self.game.action_space_size)
 
     def __train_network(self, verbose):
@@ -186,17 +192,19 @@ class DeepQAgent(object):
             terminal_state ([type]): [description]
         """
 
-        if len(self.replay_memory) < self.min_replay_memory_size:
+        if len(self.replay_memory) <= self.min_replay_memory_size:
             return
 
         # Get a mini batch from the memory
-        batch = np.random.choice(self.replay_memory, self.main_model.batch_size)
+        idx = np.random.choice(len(self.replay_memory), self.main_model.batch_size)
+        batch = np.array([self.replay_memory[i] for i in idx])
 
-        states = batch[:, 0]
+        # Get the current qs
+        states = np.array([self.replay_memory[i][0] for i in idx])
         current_qs = self.__get_pred_main(states)
 
         # Get all of the next states
-        states_prime = batch[:, 3]
+        states_prime = np.array([self.replay_memory[i][3] for i in idx])
         future_qs = self.__get_pred_target(states_prime)
 
         # Create out
@@ -226,7 +234,7 @@ class DeepQAgent(object):
             self.target_model.set_weights(self.main_model)
 
             if verbose > 0:
-                print(f"Target Model Updated At Frame {self.frame_count}")
+                print(f"Target Model Updated At Frame {self.frame_count} with {len(self.replay_memory)} samples using a batch size of {self.main_model.batch_size}")
 
     def reset_all(self):
         """

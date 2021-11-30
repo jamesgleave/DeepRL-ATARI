@@ -19,10 +19,16 @@ class DeepQNetwork(object):
         self.Model = self.__build_model(num_actions)
 
         # Compiling the model with RMSProp
-        self.Model.compile(optimizer=tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
-                            loss=tf.keras.losses.CategoricalCrossentropy(), 
+        self.Model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=1.0),
+                            loss=tf.keras.losses.Huber(),
                             metrics=[tf.keras.metrics.MeanSquaredError(),
                                     tf.keras.metrics.CategoricalAccuracy()])
+
+        self.batch_size = batch_size
+        self.num_actions = num_actions
+        self.learning_rate = learning_rate
+
+        self.Model.summary()
 
     @staticmethod
     def __build_model(num_actions:int) -> tf.keras.Model:
@@ -47,9 +53,9 @@ class DeepQNetwork(object):
         Returns:
             tf.keras.model: The DQN model from the paper
         """
-        # first layer takes in the 4 grayscale cropped image 
+        # first layer takes in the 4 grayscale cropped image
         input_lyr = tf.keras.layers.Input((84,84,4), name="Input_last_4_frames")
-        
+
         # second layer convolves 16 8x8 then applies ReLU activation
         x = tf.keras.layers.Conv2D(16, (8,8), strides=4, name="Hidden_layer_1")(input_lyr)
         x = tf.keras.layers.Activation('relu')(x)
@@ -59,6 +65,7 @@ class DeepQNetwork(object):
         x = tf.keras.layers.Activation('relu')(x)
 
         # output layer is a fullyconnected linear layer
+        x = tf.keras.layers.Flatten(name="Final_flatten")(x)
         x = tf.keras.layers.Dense(num_actions, activation='linear')(x)
 
         return tf.keras.Model(inputs=input_lyr, outputs=x, name="ATARI_DQN")
@@ -67,12 +74,12 @@ class DeepQNetwork(object):
         """
         Calls tf.keras.Model.fit() on the DQN model
         """
-        self.Model.fit(*args, **kwargs)
+        self.Model.fit(*args, **kwargs, verbose=0)
 
     def predict(self, x: np.array, *args, **kwargs) -> np.array:
         """
         Runs tf.keras.Model.predict()
-        
+
         Args
             x (np.array): Array of input samples (each sample is 4 frames of 84x84 crops)
 
@@ -89,16 +96,15 @@ class DeepQNetwork(object):
         Returns:
             tf.keras.Model: The deep clone of the model
         """
-        return tf.keras.models.clone_model(self.Model)
+        new_model = DeepQNetwork(self.num_actions, self.learning_rate, self.batch_size)
+        new_model.Model = tf.keras.models.clone_model(self.Model)
+        return new_model
 
-    def set_weights(self, model_weights:np.array):
+    def set_weights(self, model):
         """
-        Sets the weights of the DQN model.
 
-        Args:
-            model_weights (np.array): the model weights
         """
-        self.Model.set_weights(model_weights)
+        self.Model.set_weights(model.Model.get_weights())
 
     def get_weights(self) -> np.array:
         """
