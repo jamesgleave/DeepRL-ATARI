@@ -64,8 +64,12 @@ class DeepQNetwork(object):
         x = tf.keras.layers.Conv2D(32, (4,4), strides=2, name="Hidden_layer_2")(x)
         x = tf.keras.layers.Activation('relu')(x)
 
+        # James Note: Missing final dense hidden layer:
+        x = tf.keras.layers.Flatten(name="Flatten")(x)
+        x = tf.keras.layers.Dense(256, name="Hidden_layer_3")(x)
+        x = tf.keras.layers.Activation('relu')(x)
+
         # output layer is a fullyconnected linear layer
-        x = tf.keras.layers.Flatten(name="Final_flatten")(x)
         x = tf.keras.layers.Dense(num_actions, activation='linear')(x)
 
         return tf.keras.Model(inputs=input_lyr, outputs=x, name="ATARI_DQN")

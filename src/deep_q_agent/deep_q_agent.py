@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 from tqdm import tqdm
 from collections import deque
@@ -21,7 +22,8 @@ class DeepQAgent(object):
                  target_model: DeepQNetwork = None,
                  epsilon_decay: float = 0.99975,
                  min_epsilon: float = 0.001,
-                 name = "deep_q"
+                 save_name = "deep_q_agent.csv",
+                 save_frequency = 100
                  ):
         """[summary]
 
@@ -38,7 +40,8 @@ class DeepQAgent(object):
             target_model (DeepQNetwork, optional): [description]. Defaults to model.clone().
             epsilon_decay (float, optional): [description]. Defaults to 0.99975.
             min_epsilon (float, optional): [description]. Defaults to 0.001.
-            name (str, optional): [description]. Defaults to "deep_q".
+            save_name (str, optional): [description]. Defaults to "deep_q".
+            save_frequency (int, optional): Number of episodes between saving agent. Defaults to 100.
         """
 
         super().__init__()
@@ -71,11 +74,17 @@ class DeepQAgent(object):
 
         # Set the game for the agent
         self.game = game
+        self.action_count = {
+            "total": np.zeros(self.game.action_space_size),
+            "episode": np.zeros(self.game.action_space_size)
+        }
+
         # ...
 
         # Create a logger and set the name
-        self.logger = DeepQLog()
-        self.name = name
+        self.name = save_name
+        self.save_frequency = save_frequency
+        self.logger = DeepQLog(log_path=save_name)
 
 
     def __update_replay_memory(self, transition: tuple):
@@ -109,7 +118,7 @@ class DeepQAgent(object):
         """
         return self.target_model.predict(state)
 
-    def train(self, max_episodes, show_game=False, verbose=1):
+    def train(self, max_episodes, max_frames, frames_per_epoch=0, show_game=False, verbose=1):
         """[summary]
 
         Args:
@@ -121,25 +130,35 @@ class DeepQAgent(object):
         if verbose > 0:
             print("Training Initiated:")
 
-        for episode in tqdm(range(1, max_episodes + 1)):
+        pbar = tqdm(total=max_frames)
+        pbar.update(self.frame_count)
+        for episode in range(1, max_episodes + 1):
 
             # Set episode values
             done = False
             current_step = 1
             current_state = self.game.reset(frame_skip=self.main_model_train_horizon)
             total_episode_reward = 0
+            # update the logger
+            labels = ["episode", "epsilon", "frame_count", "reward", "replay_memory_size"]
+            rows = [episode, self.current_epsilon, self.frame_count, total_episode_reward, len(self.replay_memory)]
+            self.logger(labels, rows)
             while not done and self.game.max_steps > current_step:
                 # Choose an action and step with it
                 action = self.get_action(current_state)
 
+                # Count number of actions
+                self.action_count["episode"][action] += 1
+                self.action_count["total"][action] += 1
+
                 # Get the result of taking our action, which returns a stacked state
                 new_state, reward, done = self.game.step(action, self.main_model_train_horizon)
 
-                # Add to the total reward for the episode
-                total_episode_reward += reward
+                # Add to the total reward for the episode(clip between -1, 1)
+                total_episode_reward += np.clip(reward, -1, 1)
 
                 # Render the game if we want to
-                if show_game:
+                if show_game and episode % 10 == 0:
                     self.game.render()
 
                 # Update the replay memory with a new item
@@ -153,24 +172,35 @@ class DeepQAgent(object):
                 current_state = new_state
                 current_step += 1
 
-                # update the logger
-                log_entry = f"episode-{episode}"
-                self.logger(log_name=log_entry,
-                            step=current_step,
-                            total_reward=total_episode_reward,
-                            epsilon=self.current_epsilon)
-
                 # Decay current epsilon
                 self.__eps_linear_decay()
 
                 # Update the frame counter
                 self.frame_count += 1
+                pbar.update(1)
 
-            print(f"Total Episode Rewards: {total_episode_reward}")
-            print(f"Replay Memory Size: {len(self.replay_memory)}")
-            print(f"Frame Count: {self.frame_count}")
-            print(f"Epsilon: {self.current_epsilon}")
-            print()
+            print(f"Episode {episode} Complete")
+            print(f"  Total Episode Rewards: {total_episode_reward}")
+            print(f"  Replay Memory Size: {len(self.replay_memory)}")
+            print(f"  Frame Count: {self.frame_count}")
+            print(f"  Epsilon: {self.current_epsilon}")
+            print(f"  Actions Episode:", self.action_count["episode"])
+            print(f"  Actions Total:", self.action_count["total"])
+            print("-"*50)
+
+            # Save the agent at their checkpoint
+            if episode % self.save_frequency == 0:
+                self.save("agent_checkpoint")
+
+            # Reset the action count
+            self.action_count["episode"] = np.zeros(self.game.action_space_size)
+
+            if self.frame_count > max_frames:
+                print("Done: Saving Models")
+                self.main_model.Model.save("main_model")
+                self.target_model.Model.save("target_model")
+                pbar.close()
+                return
 
     def get_action(self, state: np.array) -> int:
         """[summary]
@@ -234,7 +264,7 @@ class DeepQAgent(object):
             self.target_model.set_weights(self.main_model)
 
             if verbose > 0:
-                print(f"Target Model Updated At Frame {self.frame_count} with {len(self.replay_memory)} samples using a batch size of {self.main_model.batch_size}")
+                print(f"Target Model Updated At Frame {self.frame_count} with {len(self.replay_memory)} memory items.")
 
     def reset_all(self):
         """
@@ -249,6 +279,94 @@ class DeepQAgent(object):
         Resets the current value of epsilon to the max value of epsilon
         """
         self.current_epsilon = self.max_epsilon
+
+    def save(self, filename):
+        """
+        Saves the model and overwrites any file or directory with the same name
+
+        Args:
+            filename ([type]): [description]
+        """
+        # Lazy load our libraries for saving
+        import json
+        import os
+        import shutil
+
+
+        # We remove a save if it shares the same name
+        if os.path.exists(filename):
+            shutil.rmtree(filename)
+
+        # Make the dir for the save
+        os.mkdir(filename)
+
+        # Save the params
+        info = {}
+        with open(f"{filename}/params.json", "w") as f:
+            info["min_eps"] = self.min_epsilon
+            info["epsilon"] = self.current_epsilon
+            info["max_epsilon"] = self.max_epsilon
+            info["epsilon_decay"] = self.epsilon_decay
+
+            info["frames"] = self.frame_count
+
+            info["gamma"] = self.gamma
+
+            info["min_replay_memory_size"] = self.min_replay_memory_size
+            info["target_update_horizon"] = self.target_update_horizon
+            info["main_model_train_horizon"] = self.main_model_train_horizon
+            json.dump(info, f)
+
+        # Save the replay memory
+        with open(f"{filename}/replay_memory", "wb") as dq:
+            pickle.dump(self.replay_memory, dq)
+
+        # Save the logger
+        with open(f"{filename}/replay_memory", "wb") as dq:
+            pickle.dump(self.replay_memory, dq)
+
+        # And the models
+        self.main_model.Model.save(f"{filename}/main_model")
+        self.target_model.Model.save(f"{filename}/target_model")
+
+    def load(self, filepath):
+        """
+        Loads parameters from previous run.
+
+        Args:
+            filepath ([type]): [description]
+        """
+        import json
+        info = json.load(open(f"{filepath}/params.json", "r"))
+        self.min_epsilon = info["min_eps"]
+        self.current_epsilon = info["epsilon"]
+        self.max_epsilon = info["max_epsilon"]
+        self.frame_count = info["frames"]
+        self.gamma = info["gamma"]
+        self.min_replay_memory_size = info["min_replay_memory_size"]
+        self.target_update_horizon = info["target_update_horizon"]
+        self.main_model_train_horizon = info["main_model_train_horizon"]
+        self.epsilon_decay = info["epsilon_decay"]
+
+
+        # Load the replay memory
+        with open(f"{filepath}/replay_memory", "rb") as dq:
+            self.replay_memory = pickle.load(dq)
+
+        # And the models
+        from tensorflow import keras
+        self.main_model.Model.set_weights(keras.models.load_model(f"{filepath}/main_model").get_weights())
+        self.target_model.Model.set_weights(keras.models.load_model(f"{filepath}/target_model").get_weights())
+
+
+
+
+
+
+
+
+
+
 
     def __eps_exponential_decay(self):
         """[summary]

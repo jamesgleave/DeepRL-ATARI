@@ -3,6 +3,10 @@ import gym
 import cv2
 
 
+# Added this to plot the four frame skips if true (only for debugging)
+PLOT_FRAMES = False
+
+
 class Atari(object):
     def __init__(self, game: str, max_steps: int, resized_width: int, resized_height: int):
         self.env = gym.make(game)
@@ -43,6 +47,9 @@ class Atari(object):
             tuple: [description]
         """
 
+        # Note from James
+        # Frame skip was not implemented >>> Now it is
+
         total_reward = 0
         observations = []
         for _ in range(frame_skip):
@@ -60,6 +67,23 @@ class Atari(object):
 
         stacked_images = np.stack(observations, axis=2).astype('float16')
 
+
+        if PLOT_FRAMES:
+            import matplotlib.pyplot as plt
+            f, axarr = plt.subplots(2,2)
+            axarr[0,0].imshow(stacked_images[:, :, 0])
+            axarr[0,0].set_title("Frame-1")
+
+            axarr[0,1].imshow(stacked_images[:, :, 1])
+            axarr[0,1].set_title("Frame-2")
+
+            axarr[1,0].imshow(stacked_images[:, :, 2])
+            axarr[1,0].set_title("Frame-3")
+
+            axarr[1,1].imshow(stacked_images[:, :, 3])
+            axarr[1,1].set_title("Frame-4")
+            plt.show()
+
         return stacked_images, total_reward, done
 
     def render(self):
@@ -71,4 +95,5 @@ class Atari(object):
 
 if __name__ == "__main__":
     game = Atari("Breakout-v0", 10000, 80, 80)
+    game.print_action_meanings()
     print(game.step(0))
