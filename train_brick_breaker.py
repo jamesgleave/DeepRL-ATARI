@@ -18,7 +18,7 @@ agent = deep_q_agent.DeepQAgent(game=game,
                                 min_epsilon=MIN_EPSILON,
                                 epsilon_decay=EPS_DECAY,
                                 replay_memory_size=100_000,
-                                exploration_steps=5,
+                                exploration_steps=100,
                                 target_update_horizon=10_000,
                                 main_model_train_horizon=4,
                                 min_replay_memory_size=BATCH_SIZE,)
