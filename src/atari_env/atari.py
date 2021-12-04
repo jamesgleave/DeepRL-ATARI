@@ -3,13 +3,12 @@ import gym
 import cv2
 import matplotlib.pyplot as plt
 
-
-# Added this to plot the four frame skips if true (only for debugging)
-PLOT_FRAMES = False
+# James Note: Importing deque for stack
+from collections import deque
 
 
 class Atari(object):
-    def __init__(self, game: str, max_steps: int, resized_width: int, resized_height: int):
+    def __init__(self, game: str, max_steps: int, resized_width: int, resized_height: int, frame_skip=4):
         self.env = gym.make(game)
         self.env.reset()
         self.max_steps = max_steps # Max steps per episode (int)
@@ -17,32 +16,39 @@ class Atari(object):
         self.resized_width = resized_width
         self.resized_height = resized_height
 
-    def reset(self, frame_skip=1, **kwargs):
+        # James Note: Added these two attrs for frame stacking
+        self._frame_stack = deque([], frame_skip)
+        self.frame_skip = frame_skip
+        self.output = None
+
+    def reset(self, **kwargs):
         # Should reset the environment to the begining
         # Returns initial state
-        return np.stack([self.get_preprocessed_frame(self.env.reset()) for _ in range(frame_skip)], axis=2).astype('float16')
+        # James Note: Implemented stacking from reset
+        reset_obs = self.get_preprocessed_frame(self.env.reset())
+        for _ in range(self.frame_skip):
+            self._frame_stack.append(reset_obs)
+        self.output = np.concatenate(self._frame_stack, axis=-1)
+        return self.output
 
     def num_actions_available(self):
         # Return total number of actions
         return self.env.action_space.n
 
     def get_preprocessed_frame(self, observation):
-        
-        # crop image (top and bottom, top from 34, bottom remove last 16)
-        img = observation[34:-16, :, :]
-        
-        # resize image
-        img = cv2.resize(img, (84, 84))
-        img = img.mean(-1,keepdims=True)
-        
-        img = img.astype('float32') / 255.
-        return img[:,:,0]
+        # Convert image to grayscale
+        # Rescale image
+        # James Note: Rewrote this method to return a uint8 and expand the dims
+        image = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
+        image = cv2.resize(image, (self.resized_height, self.resized_width))
+        return np.expand_dims(image[26:, :], axis=-1).astype("uint8")
+
 
     def print_action_meanings(self):
         # Prints meaings of all possible actions
         print(self.env.get_action_meanings())
 
-    def step(self, action: int, frame_skip=1) -> tuple:
+    def step(self, action: int, plot_frames: bool = False) -> tuple:
         """[summary]
 
         Args:
@@ -54,52 +60,62 @@ class Atari(object):
         """
 
         # Note from James
-        # Frame skip was not implemented >>> Now it is
+        # Frame skip was not implemented >>> Now it is (rewrote method)
 
         total_reward = 0
-        observations = []
-        for _ in range(frame_skip):
+        second_to_last = None
+        last = None
+        for i in range(self.frame_skip):
             # take a step in the env and return the next state, reward,
             # and if the game is done as a tuple
-            observation, reward, done, lives = self.env.step(action)
-            observations.append(self.get_preprocessed_frame(observation))
-            # Step function to set rewards to -1, +1 or 0
-            if reward > 0:
-                total_reward += 1
-            elif reward < 0:
-                total_reward += -1
-            else:
-                total_reward += 0
+            observation, reward, done, info = self.env.step(action)
 
-        stacked_images = np.stack(observations, axis=2).astype('float16')
+            # Sum up the total reward
+            total_reward += reward
 
+            # Store the second to last frame
+            if i == self.frame_skip - 1:
+                last = self.get_preprocessed_frame(observation)
+            elif i == self.frame_skip - 2:
+                second_to_last = self.get_preprocessed_frame(observation)
 
-        if PLOT_FRAMES:
+        # Get the max of the last frame
+        max_frame = np.array([second_to_last, last]).max(axis=0)
+
+        # Append the newest frame
+        self._frame_stack.append(max_frame)
+
+        # If the num of stacks is correct then we concat
+        assert len(self._frame_stack) == self.frame_skip or self.output is not None, "Must Reset Env To Step"
+        self.output = np.concatenate(self._frame_stack, axis=-1)
+        if plot_frames:
             import matplotlib.pyplot as plt
             f, axarr = plt.subplots(2,2)
-            axarr[0,0].imshow(stacked_images[:, :, 0])
+
+            axarr[0,0].imshow(self.output[:, :, 0])
             axarr[0,0].set_title("Frame-1")
 
-            axarr[0,1].imshow(stacked_images[:, :, 1])
+            axarr[0,1].imshow(self.output[:, :, 1])
             axarr[0,1].set_title("Frame-2")
 
-            axarr[1,0].imshow(stacked_images[:, :, 2])
+            axarr[1,0].imshow(self.output[:, :, 2])
             axarr[1,0].set_title("Frame-3")
 
-            axarr[1,1].imshow(stacked_images[:, :, 3])
+            axarr[1,1].imshow(self.output[:, :, 3])
             axarr[1,1].set_title("Frame-4")
             plt.show()
 
-        return stacked_images, total_reward, done
+        # Clip the reward
+        total_reward = np.clip(total_reward, -1, 1)
+
+        return self.output, total_reward, done, info
 
     def render(self):
         # Render the game state
         self.env.render()
 
 
-
-
 if __name__ == "__main__":
-    game = Atari("Breakout-v0", 10000, 80, 80)
-    game.print_action_meanings()
-    print(game.step(0))
+    game = Atari("Breakout-v4", 10000, 110, 84)
+    game.reset()
+    game.step(0, plot_frames=True)
