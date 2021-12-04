@@ -8,10 +8,9 @@ from collections import deque
 
 
 class Atari(object):
-    def __init__(self, game: str, max_steps: int, resized_width: int, resized_height: int, frame_skip=4):
+    def __init__(self, game: str, resized_width: int, resized_height: int, frame_skip=4):
         self.env = gym.make(game)
         self.env.reset()
-        self.max_steps = max_steps # Max steps per episode (int)
         self.action_space_size = self.env.action_space.n # The number of actions an agent can perform (int)
         self.resized_width = resized_width
         self.resized_height = resized_height
@@ -36,13 +35,16 @@ class Atari(object):
         return self.env.action_space.n
 
     def get_preprocessed_frame(self, observation):
-        # Convert image to grayscale
-        # Rescale image
-        # James Note: Rewrote this method to return a uint8 and expand the dims
-        image = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
-        image = cv2.resize(image, (self.resized_height, self.resized_width))
-        return np.expand_dims(image[26:, :], axis=-1).astype("uint8")
-
+        # crop image (top and bottom, top from 34, bottom remove last 16)
+        img = observation[34:-16, :, :]
+        
+        # resize image
+        img = cv2.resize(img, (84,84))
+        
+        img = img.mean(-1,keepdims=True)
+        
+        img = img.astype('float32') / 255.
+        return img
 
     def print_action_meanings(self):
         # Prints meaings of all possible actions

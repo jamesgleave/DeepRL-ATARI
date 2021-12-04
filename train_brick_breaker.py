@@ -34,7 +34,18 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
     s = env.reset()
     for _ in range(n_games):
         reward = 0
-        for _ in range(t_max):
+        for t in range(t_max):
+            if t == 100:
+                plt.subplot(2,2,1)
+                plt.imshow(s[:,:,0])
+                plt.subplot(2,2,2)
+                plt.imshow(s[:,:,1])
+                plt.subplot(2,2,3)
+                plt.imshow(s[:,:,2])
+                plt.subplot(2,2,4)
+                plt.imshow(s[:,:,3])
+                plt.show()
+                raise Exception
             qvalues = agent.get_qvalues([s])
             action = agent.sample_actions(qvalues)[0] # epsilon greedy
             s, r, done, _ = env.step(action)
