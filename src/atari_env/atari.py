@@ -35,20 +35,28 @@ class Atari(object):
         return self.env.action_space.n
 
     def get_preprocessed_frame(self, observation):
-        # crop image (top and bottom, top from 34, bottom remove last 16)
+        # Convert image to grayscale
+        # Rescale image
+        # James Note: Rewrote this method to return a uint8 and expand the dims
+        # image = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
+        # image = image[26:, :]
+        # image = cv2.resize(image, (self.resized_height, self.resized_width))
+
         img = observation[34:-16, :, :]
-        
+
         # resize image
         img = cv2.resize(img, (84,84))
-        
-        img = img.mean(-1,keepdims=True)
-        
-        img = img.astype('float32') / 255.
-        return img
 
-    def print_action_meanings(self):
+        img = img.mean(-1,keepdims=True)
+
+        # img = img.astype('float32') / 255.
+        return img
+        # return np.expand_dims(image, axis=-1).astype("uint8")
+
+
+    def get_action_meanings(self):
         # Prints meaings of all possible actions
-        print(self.env.get_action_meanings())
+        return self.env.get_action_meanings()
 
     def step(self, action: int, plot_frames: bool = False) -> tuple:
         """[summary]
@@ -94,16 +102,16 @@ class Atari(object):
             import matplotlib.pyplot as plt
             f, axarr = plt.subplots(2,2)
 
-            axarr[0,0].imshow(self.output[:, :, 0])
+            axarr[0,0].imshow((self.output[:, :, 0] / 255.0).astype(np.float32))
             axarr[0,0].set_title("Frame-1")
 
-            axarr[0,1].imshow(self.output[:, :, 1])
+            axarr[0,1].imshow((self.output[:, :, 1] / 255.0).astype(np.float32))
             axarr[0,1].set_title("Frame-2")
 
-            axarr[1,0].imshow(self.output[:, :, 2])
+            axarr[1,0].imshow((self.output[:, :, 2] / 255.0).astype(np.float32))
             axarr[1,0].set_title("Frame-3")
 
-            axarr[1,1].imshow(self.output[:, :, 3])
+            axarr[1,1].imshow((self.output[:, :, 3] / 255.0).astype(np.float32))
             axarr[1,1].set_title("Frame-4")
             plt.show()
 
@@ -118,6 +126,6 @@ class Atari(object):
 
 
 if __name__ == "__main__":
-    game = Atari("Breakout-v4", 10000, 110, 84)
+    game = Atari("Breakout-v4", 10000, 84, 84)
     game.reset()
-    game.step(0, plot_frames=True)
+    print(game.step(0, plot_frames=True)[0].shape)

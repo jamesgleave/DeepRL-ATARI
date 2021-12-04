@@ -6,6 +6,8 @@ from src.atari_env.atari import Atari
 from src.deep_q_agent.agent_logger import DeepQLog
 from src.deep_q_network.deep_q_network import DeepQNetwork
 
+import random
+
 
 class DeepQAgent(object):
     def __init__(self,
@@ -156,7 +158,7 @@ class DeepQAgent(object):
                 self.action_count["total"][action] += 1
 
                 # Get the result of taking our action, which returns a stacked state
-                new_state, reward, done, info = self.game.step(action)
+                new_state, reward, done, info = self.game.step(action, False)
 
                 # Add to the total reward for the episode(clip between -1, 1)
                 total_episode_reward += np.clip(reward, -1, 1)
@@ -230,12 +232,11 @@ class DeepQAgent(object):
             return
 
         # Get a mini batch from the memory
-        idx = np.random.choice(len(self.replay_memory), self.main_model.batch_size)
+        # idx = np.random.choice(len(self.replay_memory), self.main_model.batch_size)
         batch = []
         states = []
         states_prime = []
-        for i in idx:
-            memory_item = self.replay_memory[i]
+        for memory_item in random.sample(self.replay_memory, self.main_model.batch_size):
             batch.append(memory_item)
             states.append(memory_item[0])
             states_prime.append(memory_item[3])
