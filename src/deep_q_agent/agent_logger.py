@@ -22,7 +22,6 @@ class DeepQLog(object):
             self.labels = col_labels
             with open(self.log_path, "w") as f:
                 f.write(",".join(self.labels) + "\n")
-            
 
 
         # Now check (for future calls) if the labels match

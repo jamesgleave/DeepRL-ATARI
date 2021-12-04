@@ -17,11 +17,12 @@ class DeepQAgent(object):
                  replay_memory_size: int,
                  main_model_train_horizon: int,
                  target_update_horizon: int,
+                 exploration_steps: int,
 
                  min_replay_memory_size: int = None,
                  target_model: DeepQNetwork = None,
-                 epsilon_decay: float = 0.99975,
-                 min_epsilon: float = 0.001,
+                 epsilon_decay: float = None,
+                 min_epsilon: float = 0.1,
                  save_name = "deep_q_agent.csv",
                  save_frequency = 100
                  ):
@@ -36,10 +37,11 @@ class DeepQAgent(object):
             replay_memory_size (int): [description]
             main_model_train_horizon (int): [description]
             target_update_horizon (int): [description]
+            exploration_steps (int): Number of steps before starting to train.
             min_replay_memory_size (int, optional): [description]. Defaults to replay_memory_size / 50.
             target_model (DeepQNetwork, optional): [description]. Defaults to model.clone().
             epsilon_decay (float, optional): [description]. Defaults to 0.99975.
-            min_epsilon (float, optional): [description]. Defaults to 0.001.
+            min_epsilon (float, optional): [description]. Defaults to 0.1.
             save_name (str, optional): [description]. Defaults to "deep_q".
             save_frequency (int, optional): Number of episodes between saving agent. Defaults to 100.
         """
@@ -60,7 +62,8 @@ class DeepQAgent(object):
         self.main_model_train_horizon = main_model_train_horizon
 
         # We store the total number of frames
-        self.frame_count = 0
+        self.step_count = 0
+        self.exploration_steps = exploration_steps
 
         # Store gamma and alpha
         self.gamma = gamma
@@ -104,8 +107,7 @@ class DeepQAgent(object):
         Returns:
             np.array: [description]
         """
-
-        return self.main_model.predict(state)
+        return self.main_model.predict((state / 255.0).astype(np.float32))
 
     def __get_pred_target(self, state: np.array) -> np.array:
         """[summary]
@@ -116,7 +118,7 @@ class DeepQAgent(object):
         Returns:
             np.array: [description]
         """
-        return self.target_model.predict(state)
+        return self.target_model.predict((state / 255.0).astype(np.float32))
 
     def train(self, max_episodes, max_frames, frames_per_epoch=0, show_game=False, verbose=1):
         """[summary]
@@ -131,18 +133,20 @@ class DeepQAgent(object):
             print("Training Initiated:")
 
         pbar = tqdm(total=max_frames)
-        pbar.update(self.frame_count)
+        pbar.update(self.step_count)
         for episode in range(1, max_episodes + 1):
 
             # Set episode values
             done = False
             current_step = 1
-            current_state = self.game.reset(frame_skip=self.main_model_train_horizon)
+            current_state = self.game.reset()
             total_episode_reward = 0
+
             # update the logger
-            labels = ["episode", "epsilon", "frame_count", "reward", "replay_memory_size"]
-            rows = [episode, self.current_epsilon, self.frame_count, total_episode_reward, len(self.replay_memory)]
+            labels = ["episode", "epsilon", "step_count", "reward", "replay_memory_size"]
+            rows = [episode, self.current_epsilon, self.step_count, total_episode_reward, len(self.replay_memory)]
             self.logger(labels, rows)
+
             while not done and self.game.max_steps > current_step:
                 # Choose an action and step with it
                 action = self.get_action(current_state)
@@ -152,7 +156,7 @@ class DeepQAgent(object):
                 self.action_count["total"][action] += 1
 
                 # Get the result of taking our action, which returns a stacked state
-                new_state, reward, done = self.game.step(action, self.main_model_train_horizon)
+                new_state, reward, done, info = self.game.step(action)
 
                 # Add to the total reward for the episode(clip between -1, 1)
                 total_episode_reward += np.clip(reward, -1, 1)
@@ -176,13 +180,13 @@ class DeepQAgent(object):
                 self.__eps_linear_decay()
 
                 # Update the frame counter
-                self.frame_count += 1
+                self.step_count += 1
                 pbar.update(1)
 
             print(f"Episode {episode} Complete")
             print(f"  Total Episode Rewards: {total_episode_reward}")
             print(f"  Replay Memory Size: {len(self.replay_memory)}")
-            print(f"  Frame Count: {self.frame_count}")
+            print(f"  Frame Count: {self.step_count}")
             print(f"  Epsilon: {self.current_epsilon}")
             print(f"  Actions Episode:", self.action_count["episode"])
             print(f"  Actions Total:", self.action_count["total"])
@@ -195,7 +199,7 @@ class DeepQAgent(object):
             # Reset the action count
             self.action_count["episode"] = np.zeros(self.game.action_space_size)
 
-            if self.frame_count > max_frames:
+            if self.step_count > max_frames:
                 print("Done: Saving Models")
                 self.main_model.Model.save("main_model")
                 self.target_model.Model.save("target_model")
@@ -221,20 +225,28 @@ class DeepQAgent(object):
         Args:
             terminal_state ([type]): [description]
         """
-
-        if len(self.replay_memory) <= self.min_replay_memory_size:
+        # Allow the agent to explore before training
+        if len(self.replay_memory) <= self.min_replay_memory_size or self.step_count <= self.exploration_steps:
             return
 
         # Get a mini batch from the memory
         idx = np.random.choice(len(self.replay_memory), self.main_model.batch_size)
-        batch = np.array([self.replay_memory[i] for i in idx])
+        batch = []
+        states = []
+        states_prime = []
+        for i in idx:
+            memory_item = self.replay_memory[i]
+            batch.append(memory_item)
+            states.append(memory_item[0])
+            states_prime.append(memory_item[3])
+
+        states_prime = np.array(states_prime)
+        states = np.array(states)
 
         # Get the current qs
-        states = np.array([self.replay_memory[i][0] for i in idx])
         current_qs = self.__get_pred_main(states)
 
         # Get all of the next states
-        states_prime = np.array([self.replay_memory[i][3] for i in idx])
         future_qs = self.__get_pred_target(states_prime)
 
         # Create out
@@ -260,11 +272,11 @@ class DeepQAgent(object):
         self.main_model.fit(np.array(x), np.array(y))
 
         # Once we have completed enough frames, reset the counter and update the target
-        if self.frame_count % self.target_update_horizon == 0:
+        if self.step_count % self.target_update_horizon == 0:
             self.target_model.set_weights(self.main_model)
 
             if verbose > 0:
-                print(f"Target Model Updated At Frame {self.frame_count} with {len(self.replay_memory)} memory items.")
+                print(f"Target Model Updated At Frame {self.step_count} with {len(self.replay_memory)} memory items.")
 
     def reset_all(self):
         """
@@ -272,7 +284,7 @@ class DeepQAgent(object):
         and the frame counter. Along with other things which could be added later.
         """
         self.reset_epsilon()
-        self.frame_count = 0
+        self.step_count = 0
 
     def reset_epsilon(self):
         """
@@ -308,7 +320,7 @@ class DeepQAgent(object):
             info["max_epsilon"] = self.max_epsilon
             info["epsilon_decay"] = self.epsilon_decay
 
-            info["frames"] = self.frame_count
+            info["frames"] = self.step_count
 
             info["gamma"] = self.gamma
 
@@ -341,7 +353,7 @@ class DeepQAgent(object):
         self.min_epsilon = info["min_eps"]
         self.current_epsilon = info["epsilon"]
         self.max_epsilon = info["max_epsilon"]
-        self.frame_count = info["frames"]
+        self.step_count = info["frames"]
         self.gamma = info["gamma"]
         self.min_replay_memory_size = info["min_replay_memory_size"]
         self.target_update_horizon = info["target_update_horizon"]
@@ -358,13 +370,8 @@ class DeepQAgent(object):
         self.main_model.Model.set_weights(keras.models.load_model(f"{filepath}/main_model").get_weights())
         self.target_model.Model.set_weights(keras.models.load_model(f"{filepath}/target_model").get_weights())
 
-
-
-
-
-
-
-
+        # Set up the labels to avoid overwriting any saved data
+        self.logger.labels = ["episode", "epsilon", "step_count", "reward", "replay_memory_size"]
 
 
 
