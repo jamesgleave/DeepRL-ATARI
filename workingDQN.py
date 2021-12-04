@@ -8,6 +8,7 @@ import cv2
 from gym.core import ObservationWrapper
 from gym.core import Wrapper
 from gym.spaces.box import Box
+import time 
 import gym
 
 
@@ -62,18 +63,6 @@ class FrameBuffer(Wrapper):
         axis = -1
         cropped_framebuffer = self.framebuffer[:,:,:-offset]
         self.framebuffer = np.concatenate([img, cropped_framebuffer], axis=axis)
-
-def make_env():
-    env = gym.make("BreakoutDeterministic-v4")
-    env = PreprocessAtari(env)
-    env = FrameBuffer(env, n_frames=4, dim_order='tensorflow')
-    return env
-
-#Instatntiate gym Atari-Breakout environment
-env = make_env()
-env.reset()
-n_actions = env.action_space.n
-state_dim = env.observation_space.shape
 
 class DeepQNetwork(object):
     def __init__(self, n_actions, epsilon=0):
@@ -137,8 +126,6 @@ class DeepQNetwork(object):
         should_explore = np.random.choice([0, 1], batch_size, p = [1-epsilon, epsilon])
         return np.where(should_explore, random_actions, best_actions)
 
-import time 
-
 #Evaluate agents performance, in a number of games
 def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
     """ Plays n_games full games. If greedy, picks actions as argmax(qvalues). Returns mean reward. """
@@ -169,9 +156,19 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
         rewards.append(reward)
     return np.mean(rewards)
 
-agent = DeepQNetwork(n_actions, epsilon=0.5)
-agent.network.load_weights('dqn_model_og.h5')
-agent.epsilon = 0.001
-print(evaluate(make_env(), agent, n_games=1))
+
+if __name__ == '__main__':
+    #Instatntiate gym Atari-Breakout environment
+    env = gym.make("BreakoutDeterministic-v4")
+    env = PreprocessAtari(env)
+    env = FrameBuffer(env, n_frames=4, dim_order='tensorflow')
+    env.reset()
+    n_actions = env.action_space.n
+    state_dim = env.observation_space.shape
+
+    agent = DeepQNetwork(n_actions, epsilon=0.5)
+    agent.network.load_weights('dqn_model_og.h5')
+    agent.epsilon = 0.001
+    print(evaluate(env, agent, n_games=1))
 
 
