@@ -11,55 +11,64 @@ from gym.spaces.box import Box
 import time 
 import gym
 
-
-class PreprocessAtari(ObservationWrapper):
-    def __init__(self, env):
-        """A gym wrapper that crops, scales image into the desired shapes and optionally grayscales it."""
-        ObservationWrapper.__init__(self,env)
+# class PreprocessAtari(ObservationWrapper):
+#     def __init__(self, env):
+#         """A gym wrapper that crops, scales image into the desired shapes and optionally grayscales it."""
+#         ObservationWrapper.__init__(self,env)
         
-        self.img_size = (84, 84)
-        self.observation_space = Box(0.0, 1.0, (self.img_size[0], self.img_size[1], 1))
+#         self.observation_space = Box(0.0, 1.0, (self.img_size[0], self.img_size[1], 1))
 
-    def observation(self, img):
+#     def observation(self, img):
+#         """what happens to each observation"""
+        
+#         # crop image (top and bottom, top from 34, bottom remove last 16)
+#         img = img[34:-16, :, :]
+        
+#         # resize image
+#         img = cv2.resize(img, self.img_size)
+        
+#         img = img.mean(-1,keepdims=True)
+        
+#         img = img.astype('float32') / 255.
+#         return img
+
+class FrameBuffer(Wrapper):
+    def __init__(self, env, n_frames=4, img_size=(84, 84)):
+        """A gym wrapper that reshapes, crops and scales image into the desired shapes"""
+        super(FrameBuffer, self).__init__(env)
+        self.img_size = img_size
+
+        self.obs_shape = [img_size[0], img_size[1], n_frames] # 1 channel for each fram (grayscaled)
+        self.framebuffer = np.zeros(self.obs_shape, 'float32')
+
+    def process_obs(self, observation):
         """what happens to each observation"""
         
         # crop image (top and bottom, top from 34, bottom remove last 16)
-        img = img[34:-16, :, :]
+        img = observation[34:-16, :, :]
         
         # resize image
         img = cv2.resize(img, self.img_size)
         
-        img = img.mean(-1,keepdims=True)
+        img = img.mean(-1, keepdims=True)
         
         img = img.astype('float32') / 255.
         return img
 
-class FrameBuffer(Wrapper):
-    def __init__(self, env, n_frames=4, dim_order='tensorflow'):
-        """A gym wrapper that reshapes, crops and scales image into the desired shapes"""
-        super(FrameBuffer, self).__init__(env)
-        self.dim_order = dim_order
-
-        height, width, n_channels = env.observation_space.shape
-        obs_shape = [height, width, n_channels * n_frames]
-
-        self.observation_space = Box(0.0, 1.0, obs_shape)
-        self.framebuffer = np.zeros(obs_shape, 'float32')
-        
     def reset(self):
         """resets breakout, returns initial frames"""
         self.framebuffer = np.zeros_like(self.framebuffer)
-        self.update_buffer(self.env.reset())
+        self.update_buffer(self.process_obs(self.env.reset()))
         return self.framebuffer
     
     def step(self, action):
         """plays breakout for 1 step, returns frame buffer"""
         new_img, reward, done, info = self.env.step(action)
-        self.update_buffer(new_img)
+        self.update_buffer(self.process_obs(new_img))
         return self.framebuffer, reward, done, info
     
     def update_buffer(self, img):
-        offset = self.env.observation_space.shape[-1]
+        offset = 1 # 1 channel per pixel
         axis = -1
         cropped_framebuffer = self.framebuffer[:,:,:-offset]
         self.framebuffer = np.concatenate([img, cropped_framebuffer], axis=axis)
@@ -160,8 +169,7 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
 if __name__ == '__main__':
     #Instatntiate gym Atari-Breakout environment
     env = gym.make("BreakoutDeterministic-v4")
-    env = PreprocessAtari(env)
-    env = FrameBuffer(env, n_frames=4, dim_order='tensorflow')
+    env = FrameBuffer(env, n_frames=4, img_size=(84,84))
     env.reset()
     n_actions = env.action_space.n
     state_dim = env.observation_space.shape
