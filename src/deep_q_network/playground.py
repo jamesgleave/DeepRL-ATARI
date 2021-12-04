@@ -143,7 +143,7 @@ m = DeepQNetwork(4).Model
 m.load_weights('src/deep_q_network/dqn_model_atari_weights.h5')
 i = tf.keras.layers.Input((84,84,4), name="Input_last_4_frames")
 
-# creating new model by looping through the model until the laexit()st layer
+# creating new model by looping through the model until the last layer
 x = m.layers[0](i)
 for l in m.layers[1:]:
     x = l(x)

@@ -11,6 +11,7 @@ EPS_DECAY = 0.9/10_000 # 0.9/1_000_000
 game = atari.Atari("Breakout-v0", 10000, 110, 84)
 print("Init", game.action_space_size)
 network = deep_q_network.DeepQNetwork(game.action_space_size, 0.00025, BATCH_SIZE)
+network.Model.load_weights('dqn_model_og.h5')
 agent = deep_q_agent.DeepQAgent(game=game,
                                 model=network,
                                 gamma=0.99,

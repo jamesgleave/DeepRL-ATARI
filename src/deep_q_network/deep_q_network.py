@@ -55,16 +55,14 @@ class DeepQNetwork(object):
         """
         # first layer takes in the 4 grayscale cropped image
         input_lyr = tf.keras.layers.Input((84,84,4), name="Input_last_4_frames")
+        
+        # convolutional layers 
+        x = tf.keras.layers.Conv2D(32, (8,8), activation='relu', strides=4, use_bias=False, input_shape=(84,84,4), name="Hidden_layer_1")(input_lyr)
+        x = tf.keras.layers.Conv2D(64, (4,4), activation='relu', strides=2, use_bias=False, name="Hidden_layer_2")(x)
+        x = tf.keras.layers.Conv2D(64, (3,3), activation='relu', strides=1, use_bias=False, name="Hidden_layer_3")(x)
+        x = tf.keras.layers.Conv2D(1024, (7,7), activation='relu', strides=1, use_bias=False, name="Hidden_layer_4")(x)
 
-        # second layer convolves 16 8x8 then applies ReLU activation
-        x = tf.keras.layers.Conv2D(16, (8,8), strides=4, name="Hidden_layer_1")(input_lyr)
-        x = tf.keras.layers.Activation('relu')(x)
-
-        # third layer is the same but with 32 4x4 filters
-        x = tf.keras.layers.Conv2D(32, (4,4), strides=2, name="Hidden_layer_2")(x)
-        x = tf.keras.layers.Activation('relu')(x)
-
-        # output layer is a fullyconnected linear layer
+        # flattening for dense output
         x = tf.keras.layers.Flatten(name="Final_flatten")(x)
         x = tf.keras.layers.Dense(num_actions, activation='linear')(x)
 
