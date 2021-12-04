@@ -82,10 +82,10 @@ class DeepQNetwork(object):
         Returns:
             np.array: The list of action-value predictions.
         """
-        print("\n")
-        print(x.shape)
-        print(self.Model.predict(x, *args, **kwargs).shape)
-        exit()
+        # print("\n")
+        # print(x.shape)
+        # print(self.Model.predict(x, *args, **kwargs).shape)
+        # exit()
 
         return self.Model.predict(x, *args, **kwargs)
 
@@ -139,19 +139,19 @@ class DeepQNetwork(object):
         """
         self.Model.summary()
 
-m = DeepQNetwork(4).Model
-m.load_weights('src/deep_q_network/dqn_model_atari_weights.h5')
-i = tf.keras.layers.Input((84,84,4), name="Input_last_4_frames")
+# m = DeepQNetwork(4).Model
+# m.load_weights('src/deep_q_network/dqn_model_atari_weights.h5')
+# i = tf.keras.layers.Input((84,84,4), name="Input_last_4_frames")
 
-# creating new model by looping through the model until the last layer
-x = m.layers[0](i)
-for l in m.layers[1:]:
-    x = l(x)
+# # creating new model by looping through the model until the last layer
+# x = m.layers[0](i)
+# for l in m.layers[1:]:
+#     x = l(x)
 
-# building model:
+# # building model:
 
-# creating new model:
-m2 = tf.keras.Model(i, x)
-m2.summary()
+# # creating new model:
+# m2 = tf.keras.Model(i, x)
+# m2.summary()
 
-m2.save_weights('dqn_model_og.h5')
+# m2.save_weights('dqn_model_og.h5')

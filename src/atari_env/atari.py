@@ -1,6 +1,11 @@
 import numpy as np
 import gym
 import cv2
+import matplotlib.pyplot as plt
+
+
+# Added this to plot the four frame skips if true (only for debugging)
+PLOT_FRAMES = False
 
 
 class Atari(object):
@@ -22,11 +27,16 @@ class Atari(object):
         return self.env.action_space.n
 
     def get_preprocessed_frame(self, observation):
-        # Convert image to grayscale
-        # Rescale image
-        image = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
-        image = cv2.resize(image, (self.resized_height, self.resized_width))
-        return image[26:, :]
+        
+        # crop image (top and bottom, top from 34, bottom remove last 16)
+        img = observation[34:-16, :, :]
+        
+        # resize image
+        img = cv2.resize(img, (84, 84))
+        img = img.mean(-1,keepdims=True)
+        
+        img = img.astype('float32') / 255.
+        return img[:,:,0]
 
     def print_action_meanings(self):
         # Prints meaings of all possible actions
@@ -42,6 +52,9 @@ class Atari(object):
         Returns:
             tuple: [description]
         """
+
+        # Note from James
+        # Frame skip was not implemented >>> Now it is
 
         total_reward = 0
         observations = []
@@ -60,6 +73,23 @@ class Atari(object):
 
         stacked_images = np.stack(observations, axis=2).astype('float16')
 
+
+        if PLOT_FRAMES:
+            import matplotlib.pyplot as plt
+            f, axarr = plt.subplots(2,2)
+            axarr[0,0].imshow(stacked_images[:, :, 0])
+            axarr[0,0].set_title("Frame-1")
+
+            axarr[0,1].imshow(stacked_images[:, :, 1])
+            axarr[0,1].set_title("Frame-2")
+
+            axarr[1,0].imshow(stacked_images[:, :, 2])
+            axarr[1,0].set_title("Frame-3")
+
+            axarr[1,1].imshow(stacked_images[:, :, 3])
+            axarr[1,1].set_title("Frame-4")
+            plt.show()
+
         return stacked_images, total_reward, done
 
     def render(self):
@@ -71,4 +101,5 @@ class Atari(object):
 
 if __name__ == "__main__":
     game = Atari("Breakout-v0", 10000, 80, 80)
+    game.print_action_meanings()
     print(game.step(0))

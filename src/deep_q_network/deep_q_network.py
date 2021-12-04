@@ -18,12 +18,6 @@ class DeepQNetwork(object):
         """
         self.Model = self.__build_model(num_actions)
 
-        # Compiling the model with RMSProp
-        self.Model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=1.0),
-                            loss=tf.keras.losses.Huber(),
-                            metrics=[tf.keras.metrics.MeanSquaredError(),
-                                    tf.keras.metrics.CategoricalAccuracy()])
-
         self.batch_size = batch_size
         self.num_actions = num_actions
         self.learning_rate = learning_rate
@@ -67,6 +61,13 @@ class DeepQNetwork(object):
         x = tf.keras.layers.Dense(num_actions, activation='linear')(x)
 
         return tf.keras.Model(inputs=input_lyr, outputs=x, name="ATARI_DQN")
+
+    def compile(self):
+        # Compiling the model with RMSProp
+        self.Model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=1.0),
+                            loss=tf.keras.losses.Huber(),
+                            metrics=[tf.keras.metrics.MeanSquaredError(),
+                                    tf.keras.metrics.CategoricalAccuracy()])
 
     def fit(self, *args, **kwargs):
         """
