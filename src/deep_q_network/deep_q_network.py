@@ -18,17 +18,11 @@ class DeepQNetwork(object):
         """
         self.Model = self.__build_model(num_actions)
 
-        # Compiling the model with RMSProp
-        self.Model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=1.0),
-                            loss=tf.keras.losses.Huber(),
-                            metrics=[tf.keras.metrics.MeanSquaredError(),
-                                    tf.keras.metrics.CategoricalAccuracy()])
-
         self.batch_size = batch_size
         self.num_actions = num_actions
         self.learning_rate = learning_rate
-
         self.Model.summary()
+        self.epsilon = 0.01
 
     @staticmethod
     def __build_model(num_actions:int) -> tf.keras.Model:
@@ -55,24 +49,36 @@ class DeepQNetwork(object):
         """
         # first layer takes in the 4 grayscale cropped image
         input_lyr = tf.keras.layers.Input((84,84,4), name="Input_last_4_frames")
+        
+        # convolutional layers 
+        x = tf.keras.layers.Conv2D(32, (8,8), activation='relu', strides=4, use_bias=False, input_shape=(84,84,4), name="Hidden_layer_1")(input_lyr)
+        x = tf.keras.layers.Conv2D(64, (4,4), activation='relu', strides=2, use_bias=False, name="Hidden_layer_2")(x)
+        x = tf.keras.layers.Conv2D(64, (3,3), activation='relu', strides=1, use_bias=False, name="Hidden_layer_3")(x)
+        x = tf.keras.layers.Conv2D(1024, (7,7), activation='relu', strides=1, use_bias=False, name="Hidden_layer_4")(x)
 
-        # second layer convolves 16 8x8 then applies ReLU activation
-        x = tf.keras.layers.Conv2D(16, (8,8), strides=4, name="Hidden_layer_1")(input_lyr)
-        x = tf.keras.layers.Activation('relu')(x)
-
-        # third layer is the same but with 32 4x4 filters
-        x = tf.keras.layers.Conv2D(32, (4,4), strides=2, name="Hidden_layer_2")(x)
-        x = tf.keras.layers.Activation('relu')(x)
-
-        # James Note: Missing final dense hidden layer:
-        x = tf.keras.layers.Flatten(name="Flatten")(x)
-        x = tf.keras.layers.Dense(256, name="Hidden_layer_3")(x)
-        x = tf.keras.layers.Activation('relu')(x)
-
-        # output layer is a fullyconnected linear layer
+        # flattening for dense output
+        x = tf.keras.layers.Flatten(name="Final_flatten")(x)
         x = tf.keras.layers.Dense(num_actions, activation='linear')(x)
 
         return tf.keras.Model(inputs=input_lyr, outputs=x, name="ATARI_DQN")
+
+    def compile(self):
+        # Compiling the model with RMSProp
+        self.Model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate, clipnorm=1.0),
+                            loss=tf.keras.losses.Huber(),
+                            metrics=[tf.keras.metrics.MeanSquaredError(),
+                                    tf.keras.metrics.CategoricalAccuracy()])
+
+    def get_qvalues(self, state_t):
+        return self.Model.predict(np.asarray(state_t))
+
+    def sample_actions(self, qvalues):
+        epsilon = self.epsilon
+        batch_size, n_actions = qvalues.shape
+        random_actions = np.random.choice(n_actions, size=batch_size)
+        best_actions = qvalues.argmax(axis=-1)
+        should_explore = np.random.choice([0, 1], batch_size, p = [1-epsilon, epsilon])
+        return np.where(should_explore, random_actions, best_actions)
 
     def fit(self, *args, **kwargs):
         """
