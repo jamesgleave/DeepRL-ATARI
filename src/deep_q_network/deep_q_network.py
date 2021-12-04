@@ -21,8 +21,8 @@ class DeepQNetwork(object):
         self.batch_size = batch_size
         self.num_actions = num_actions
         self.learning_rate = learning_rate
-
         self.Model.summary()
+        self.epsilon = 0.01
 
     @staticmethod
     def __build_model(num_actions:int) -> tf.keras.Model:
@@ -64,10 +64,21 @@ class DeepQNetwork(object):
 
     def compile(self):
         # Compiling the model with RMSProp
-        self.Model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=1.0),
+        self.Model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate, clipnorm=1.0),
                             loss=tf.keras.losses.Huber(),
                             metrics=[tf.keras.metrics.MeanSquaredError(),
                                     tf.keras.metrics.CategoricalAccuracy()])
+
+    def get_qvalues(self, state_t):
+        return self.Model.predict(np.asarray(state_t))
+
+    def sample_actions(self, qvalues):
+        epsilon = self.epsilon
+        batch_size, n_actions = qvalues.shape
+        random_actions = np.random.choice(n_actions, size=batch_size)
+        best_actions = qvalues.argmax(axis=-1)
+        should_explore = np.random.choice([0, 1], batch_size, p = [1-epsilon, epsilon])
+        return np.where(should_explore, random_actions, best_actions)
 
     def fit(self, *args, **kwargs):
         """
