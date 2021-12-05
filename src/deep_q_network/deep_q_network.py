@@ -30,25 +30,24 @@ class DeepQNetwork(object):
         """
         This function builds the exact DQN model from the Atari paper.
             Input shape is (84, 84, 4).
-                - This is the preprocessed images of the last 4 frames in the history
+                - This is the *normalized* preprocessed images of the last 4 frames in the history
 
-            1st Hidden layer convolves 16 8x8 filters with stride 4.
-                - followed by rectifier nonlinear
-
-            2nd hidden layer convolves 32 4x4 filters with stride 2.
-                - again followed by rectifier nonlinearity
+            1st Hidden layer convolves input with 32 8x8 filters with stride 4.
+            2nd hidden layer convolves 64 4x4 filters with stride 2.
+            3rd hidden layer convolves 64 3x3 filters with stride 1.
+            4th hidden layer convolves 1024 7x7 filters with stride 1.
 
             Output layer is a fully connected linear layer.
-                - shape -> (a, ) where a is the number of actions
-                - the ouput corresponds to the predicted Q-values
+                - shape -> (a, ) where a is the number of actions.
+                - the ouput corresponds to the predicted Q-values for each action taken.
 
         Args:
-            num_actions (int): this determines the output shape
+            num_actions (int): this determines the output shape.
 
         Returns:
-            tf.keras.model: The DQN model from the paper
+            tf.keras.model: The DQN model from the paper.
         """
-        # First layer takes in the 4 grayscale cropped image
+        # First layer takes in the 4 grayscale cropped and normalized image
         input_lyr = tf.keras.layers.Input((84,84,4), name="Input_last_4_frames")
         
         # Convolutional layers 

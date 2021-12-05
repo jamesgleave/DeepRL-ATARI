@@ -90,7 +90,6 @@ class DeepQAgent(object):
         self.save_frequency = save_frequency
         self.logger = DeepQLog(log_path=save_name)
 
-
     def __update_replay_memory(self, transition: tuple):
         """[summary]
 
@@ -209,6 +208,51 @@ class DeepQAgent(object):
                 pbar.close()
                 return
 
+    def evaluate(self, epsilon=None, n_games=1, greedy=False, max_steps=10_000):
+        """
+        Evaluates the agent by running it through multiple runs of the game and returning 
+        the average reward. 
+
+        Args:
+            epsilon (float, optional): Can pass in epsilon to use or will use the current_epsilon. Defaults to None.
+            n_games (int, optional): Number of games to average over. Defaults to 1.
+            greedy (bool, optional): If true then it picks the action that gives the max reward everytime (not epsilon greedy). Defaults to False.
+            max_steps (int, optional): Max number of steps for each game. Defaults to 10_000.
+
+        Returns:
+            float: the average total reward across all the games.
+        """
+        eps = self.current_epsilon if epsilon is None else epsilon
+        rewards = []
+        s = self.game.reset()
+        for _ in range(n_games):
+            total_r = 0 # keeps track of the total reward
+            for _ in range(max_steps):
+                # Predicting the q_values for each action using the model
+                q_vals = self.main_model.predict(np.asarray([s]))
+
+                if greedy:
+                    # picks the max q value
+                    a = q_vals.argmax(axis=-1)[0]
+                else:
+                    # epsilon greedy selection
+                    batch_size, n_actions = q_vals.shape
+                    rand_a = np.random.choice(n_actions, size=batch_size) # random selection
+                    max_a = q_vals.argmax(axis=-1) # best action selection (largest q_value)
+
+                    # Selecting whether or not to pick random action with epsilon probability for each of the q_values
+                    choice = np.random.choice([0, 1], batch_size, p = [1-eps, eps])
+                    a = np.where(choice, rand_a, max_a)[0]
+
+                s, r, done, _ = self.game.step(a)
+                total_r += r 
+
+                if done: 
+                    s = self.game.reset()
+                    break
+            rewards.append(total_r)
+        return np.mean(rewards)
+
     def get_action(self, state: np.array, inference_epsilon=None) -> int:
         """[summary]
 
@@ -285,7 +329,7 @@ class DeepQAgent(object):
 
         # Once we have completed enough frames, reset the counter and update the target
         if self.step_count % self.target_update_horizon == 0:
-            self.target_model.set_weights(self.main_model)
+            self.target_model.Model.set_weights(self.main_model.Model.get_weights())
 
             if verbose > 0:
                 print(f"Target Model Updated At Frame {self.step_count} with {len(self.replay_memory)} memory items.")

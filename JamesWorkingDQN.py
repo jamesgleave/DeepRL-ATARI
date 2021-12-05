@@ -182,9 +182,8 @@ if __name__ == '__main__':
     n_actions = env.action_space.n
     state_dim = env.observation_space.shape
 
-    agent = DeepQNetwork(n_actions, epsilon=1)
+    agent = DeepQNetwork(n_actions, epsilon=0.001)
     agent.network.load_weights('dqn_model_og.h5')
-    agent.epsilon = 0.01
-    print(evaluate(env, agent, n_games=10))
+    print(evaluate(env, agent, n_games=1))
 
 
