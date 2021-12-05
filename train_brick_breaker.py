@@ -24,5 +24,5 @@ agent = deep_q_agent.DeepQAgent(game=game,
                                 min_replay_memory_size=BATCH_SIZE,
                                 save_frequency=250)
 
-
+agent.load("/Users/martingleave/Downloads/agent_checkpoint")
 agent.train(max_episodes=100_000, max_frames=2_500_000, show_game=False)

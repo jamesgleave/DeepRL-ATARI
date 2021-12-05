@@ -157,6 +157,9 @@ class DeepQAgent(object):
 
                 # Get the result of taking our action, which returns a stacked state
                 new_state, reward, done, info = self.game.step(action, False)
+                
+                # Update the progress bar with the number of steps in the episode
+                pbar.update(1)
 
                 # Add to the total reward for the episode
                 total_episode_reward += reward
@@ -182,13 +185,10 @@ class DeepQAgent(object):
                 # Update the frame counter
                 self.step_count += 1
 
-            # Update the progress bar with the number of steps in the episode
-            pbar.update(current_step)
-
             print(f"Episode {episode} Complete")
             print(f"  Total Episode Rewards: {total_episode_reward}")
             print(f"  Replay Memory Size: {len(self.replay_memory)}")
-            print(f"  Frame Count: {self.step_count}")
+            print(f"  Step Count: {self.step_count}")
             print(f"  Epsilon: {self.current_epsilon}")
             print(f"  Actions Episode:", self.action_count["episode"])
             print(f"  Actions Total:", self.action_count["total"])
