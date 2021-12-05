@@ -157,7 +157,9 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
             # axarr[3,0].imshow((s2[:, :, 2] / 255.0).astype(np.float32))
             # axarr[3,1].imshow((s2[:, :, 3] / 255.0).astype(np.float32))
             # plt.show()
-            env2.render()
+            # env2.render()
+            # time.sleep(0.01)
+
 
 
             qvalues = agent.get_qvalues([s])
@@ -183,6 +185,6 @@ if __name__ == '__main__':
     agent = DeepQNetwork(n_actions, epsilon=0.5)
     agent.network.load_weights('dqn_model_og.h5')
     agent.epsilon = 0.001
-    print(evaluate(env, agent, n_games=1))
+    print(evaluate(env, agent, n_games=5))
 
 

@@ -35,24 +35,12 @@ class Atari(object):
         return self.env.action_space.n
 
     def get_preprocessed_frame(self, observation):
-        # Convert image to grayscale
-        # Rescale image
-        # James Note: Rewrote this method to return a uint8 and expand the dims
-        # image = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
-        # image = image[26:, :]
-        # image = cv2.resize(image, (self.resized_height, self.resized_width))
-
+        # cropping to only the action space
         img = observation[34:-16, :, :]
-
-        # resize image
+        # Resize image
         img = cv2.resize(img, (84,84))
-
-        img = img.mean(-1,keepdims=True)
-
-        # img = img.astype('float32') / 255.
-        return img
-        # return np.expand_dims(image, axis=-1).astype("uint8")
-
+        # Grayscaling the image as int type to save RAM (normalization occurs on input)
+        return img.mean(-1,keepdims=True).astype("uint8")
 
     def get_action_meanings(self):
         # Prints meaings of all possible actions

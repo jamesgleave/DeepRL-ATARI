@@ -19,6 +19,7 @@ class FrameBuffer(Wrapper):
 
         self.obs_shape = [img_size[0], img_size[1], n_frames] # 1 channel for each fram (grayscaled)
         self.framebuffer = np.zeros(self.obs_shape, 'float32')
+        self.action_space_size = self.env.action_space.n
 
     def process_obs(self, observation):
         """what happens to each observation"""
@@ -52,68 +53,6 @@ class FrameBuffer(Wrapper):
         cropped_framebuffer = self.framebuffer[:,:,:-offset]
         self.framebuffer = np.concatenate([img, cropped_framebuffer], axis=axis)
 
-class DeepQNetwork(object):
-    def __init__(self, n_actions, epsilon=0):
-        """
-        An implementation of the exact network used in the Atari paper. So not many arguments needed.
-
-        Args:
-            num_actions (int): The number of possible actions. This will define the output shape of the model.
-            learning_rate (float, optional): Defaults to 0.1.
-            batch_size (int, optional): Defaults to the size that is used in the paper.
-        """
-        self.network = self.__build_model(n_actions)
-        self.epsilon = epsilon
-
-    @staticmethod
-    def __build_model(num_actions:int) -> tf.keras.Model:
-        """
-        This function builds the exact DQN model from the Atari paper.
-            Input shape is (84, 84, 4).
-                - This is the preprocessed images of the last 4 frames in the history
-
-            1st Hidden layer convolves 16 8x8 filters with stride 4.
-                - followed by rectifier nonlinear
-
-            2nd hidden layer convolves 32 4x4 filters with stride 2.
-                - again followed by rectifier nonlinearity
-
-            Output layer is a fully connected linear layer.
-                - shape -> (a, ) where a is the number of actions
-                - the ouput corresponds to the predicted Q-values
-
-        Args:
-            num_actions (int): this determines the output shape
-
-        Returns:
-            tf.keras.model: The DQN model from the paper
-        """
-        # first layer takes in the 4 grayscale cropped image
-        input_lyr = tf.keras.layers.Input((84,84,4), name="Input_last_4_frames")
-        
-        # convolutional layers 
-        x = tf.keras.layers.Conv2D(32, (8,8), activation='relu', strides=4, use_bias=False, input_shape=(84,84,4), name="Hidden_layer_1")(input_lyr)
-        x = tf.keras.layers.Conv2D(64, (4,4), activation='relu', strides=2, use_bias=False, name="Hidden_layer_2")(x)
-        x = tf.keras.layers.Conv2D(64, (3,3), activation='relu', strides=1, use_bias=False, name="Hidden_layer_3")(x)
-        x = tf.keras.layers.Conv2D(1024, (7,7), activation='relu', strides=1, use_bias=False, name="Hidden_layer_4")(x)
-
-        # flattening for dense output
-        x = tf.keras.layers.Flatten(name="Final_flatten")(x)
-        x = tf.keras.layers.Dense(num_actions, activation='linear')(x)
-
-        return tf.keras.Model(inputs=input_lyr, outputs=x, name="ATARI_DQN")
-
-    def get_qvalues(self, state_t):
-        return self.network.predict(np.asarray(state_t))
-    
-    def sample_actions(self, qvalues):
-        epsilon = self.epsilon
-        batch_size, n_actions = qvalues.shape
-        random_actions = np.random.choice(n_actions, size=batch_size)
-        best_actions = qvalues.argmax(axis=-1)
-        should_explore = np.random.choice([0, 1], batch_size, p = [1-epsilon, epsilon])
-        return np.where(should_explore, random_actions, best_actions)
-
 #Evaluate agents performance, in a number of games
 def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
     """ Plays n_games full games. If greedy, picks actions as argmax(qvalues). Returns mean reward. """
@@ -133,9 +72,10 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
             #     plt.imshow(s[:,:,3])
             #     plt.show()
             #     raise Exception
-            
-            qvalues = agent.get_qvalues([s])
-            action = qvalues.argmax(axis=-1)[0] if greedy else agent.sample_actions(qvalues)[0]
+            # env.render()
+            # time.sleep(0.01)
+            qvalues = agent.main_model.predict(np.asarray([s]))
+            action = qvalues.argmax(axis=-1)[0]
             s, r, done, _ = env.step(action)
             reward += r
             if done: 
@@ -144,18 +84,28 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
         rewards.append(reward)
     return np.mean(rewards)
 
+from src.deep_q_network.deep_q_network import DeepQNetwork
+from src.deep_q_agent.deep_q_agent import DeepQAgent
 
 if __name__ == '__main__':
-    #Instatntiate gym Atari-Breakout environment
     env = gym.make("BreakoutDeterministic-v4")
     env = FrameBuffer(env, n_frames=4, img_size=(84,84))
     env.reset()
     n_actions = env.action_space.n
     state_dim = env.observation_space.shape
 
-    agent = DeepQNetwork(n_actions, epsilon=0.5)
-    agent.network.load_weights('dqn_model_og.h5')
-    agent.epsilon = 0.001
+    model = DeepQNetwork(4, weights='dqn_model_og.h5')
+    agent = DeepQAgent(game=env,
+                        model=model,
+                        gamma=0.99,
+                        alpha=1,
+                        epsilon=0.001,
+                        min_epsilon=0.001,
+                        replay_memory_size=100_000,
+                        exploration_steps=100,
+                        target_update_horizon=10_000,
+                        main_model_train_horizon=4,
+                        min_replay_memory_size=32
+    )
+
     print(evaluate(env, agent, n_games=1))
-
-

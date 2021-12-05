@@ -160,8 +160,8 @@ class DeepQAgent(object):
                 # Get the result of taking our action, which returns a stacked state
                 new_state, reward, done, info = self.game.step(action, False)
 
-                # Add to the total reward for the episode(clip between -1, 1)
-                total_episode_reward += np.clip(reward, -1, 1)
+                # Add to the total reward for the episode
+                total_episode_reward += reward
 
                 # Render the game if we want to
                 if show_game and episode % 10 == 0:
@@ -270,7 +270,7 @@ class DeepQAgent(object):
             y.append(current_q_value)
 
         # Fit our model
-        self.main_model.fit(np.array(x), np.array(y))
+        self.main_model.fit(np.array(x), np.array(y), verbose=0)
 
         # Once we have completed enough frames, reset the counter and update the target
         if self.step_count % self.target_update_horizon == 0:
