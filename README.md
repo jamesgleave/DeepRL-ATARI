@@ -23,4 +23,5 @@ PAPER: https://arxiv.org/pdf/1312.5602.pdf
 
 
 # Main Model
-- Run train_brick_breaker.py for the DeepQ learning model. 
+We have 3 different models that can be run. 
+- python evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}
