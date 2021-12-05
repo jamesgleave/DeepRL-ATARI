@@ -3,7 +3,8 @@ DRIVE: https://drive.google.com/drive/folders/1u_tzZSIlvi1BjVqRYS4ewcKxap9kMaDJ?
 
 PAPER: https://arxiv.org/pdf/1312.5602.pdf
 
-# Introduction 
+# About
+Using deep q-learing algorithm for function aproximating in a Atari environment
 
 
 # Installation requirements
