@@ -24,4 +24,6 @@ PAPER: https://arxiv.org/pdf/1312.5602.pdf
 
 # Main Model
 We have 3 different models that can be run. 
-- python evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}
+```sh
+python evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}
+```
