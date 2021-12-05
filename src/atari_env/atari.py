@@ -74,6 +74,13 @@ class Atari(object):
         img = img.mean(-1,keepdims=True)
         # Return as an unsigned integer to save space
         # Normalization occurs upon model input
+
+        #import matplotlib.pyplot as plt
+        #f, axarr = plt.subplots(2,2)
+        #axarr[0,0].imshow((img[:, :, 0] / 255.0).astype(np.float32),  cmap='gray')
+        #axarr[0,0].set_title("Frame-1")
+
+
         return img.astype("uint8")
 
 
@@ -131,16 +138,16 @@ class Atari(object):
             import matplotlib.pyplot as plt
             f, axarr = plt.subplots(2,2)
 
-            axarr[0,0].imshow((self.output[:, :, 0] / 255.0).astype(np.float32))
+            axarr[0,0].imshow((self.output[:, :, 0] / 255.0).astype(np.float32), cmap='gray')
             axarr[0,0].set_title("Frame-1")
 
-            axarr[0,1].imshow((self.output[:, :, 1] / 255.0).astype(np.float32))
+            axarr[0,1].imshow((self.output[:, :, 1] / 255.0).astype(np.float32), cmap='gray')
             axarr[0,1].set_title("Frame-2")
 
-            axarr[1,0].imshow((self.output[:, :, 2] / 255.0).astype(np.float32))
+            axarr[1,0].imshow((self.output[:, :, 2] / 255.0).astype(np.float32), cmap='gray')
             axarr[1,0].set_title("Frame-3")
 
-            axarr[1,1].imshow((self.output[:, :, 3] / 255.0).astype(np.float32))
+            axarr[1,1].imshow((self.output[:, :, 3] / 255.0).astype(np.float32), cmap='gray')
             axarr[1,1].set_title("Frame-4")
             plt.show()
 
@@ -159,3 +166,4 @@ if __name__ == "__main__":
     game = Atari("Breakout-v4", 84, 84)
     game.reset()
     print(game.step(0, plot_frames=True)[0].shape)
+    print
