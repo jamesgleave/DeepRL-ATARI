@@ -83,7 +83,6 @@ class Atari(object):
 
         return img.astype("uint8")
 
-
     def get_action_meanings(self):
         """[summary]
 
