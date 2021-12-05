@@ -147,7 +147,7 @@ class DeepQAgent(object):
             rows = [episode, self.current_epsilon, self.step_count, total_episode_reward, len(self.replay_memory)]
             self.logger(labels, rows)
 
-            while not done and self.game.max_steps > current_step:
+            while not done:
                 # Choose an action and step with it
                 action = self.get_action(current_state)
 

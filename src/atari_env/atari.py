@@ -147,7 +147,7 @@ class Atari(object):
         if self.clip_reward:
             total_reward = np.clip(total_reward, -1, 1)
 
-        return self.output[:,:,::-1], total_reward, done, info
+        return self.output[:, :, ::-1], total_reward, done, info
 
     def render(self):
         # Render the game state
