@@ -281,7 +281,7 @@ class DeepQAgent(object):
             y.append(current_q_value)
 
         # Fit our model
-        self.main_model.fit(np.array(x), np.array(y))
+        self.main_model.fit(np.array(x), np.array(y), verbose=0)
 
         # Once we have completed enough frames, reset the counter and update the target
         if self.step_count % self.target_update_horizon == 0:

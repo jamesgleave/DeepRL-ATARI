@@ -68,10 +68,12 @@ class Atari(object):
         # Rescale image
         # James Note: Rewrote this method to return a uint8 and expand the dims
         img = observation[34:-16, :, :]
-
-        # resize image
+        # Resize image
         img = cv2.resize(img, (84,84))
+        # Grayscale
         img = img.mean(-1,keepdims=True)
+        # Return as an unsigned integer to save space
+        # Normalization occurs upon model input
         return img.astype("uint8")
 
 
