@@ -8,10 +8,18 @@ from collections import deque
 
 
 class Atari(object):
-    def __init__(self, game: str, resized_width: int, resized_height: int, frame_skip=4):
+    def __init__(self, game: str, resized_width: int, resized_height: int, frame_skip=4, clip_reward: bool = True):
+        """[summary]
+
+        Args:
+            game (str): [description]
+            resized_width (int): [description]
+            resized_height (int): [description]
+            frame_skip (int, optional): [description]. Defaults to 4.
+            clip_reward (bool, optional): [description]. Defaults to True.
+        """
         self.env = gym.make(game)
-        self.env.reset()
-        self.action_space_size = self.env.action_space.n # The number of actions an agent can perform (int)
+        self.action_space_size = self.env.action_space.n  # The number of actions an agent can perform (int)
         self.resized_width = resized_width
         self.resized_height = resized_height
 
@@ -20,7 +28,15 @@ class Atari(object):
         self.frame_skip = frame_skip
         self.output = None
 
-    def reset(self, **kwargs):
+        # Also clip reward
+        self.clip_reward = clip_reward
+
+    def reset(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         # Should reset the environment to the begining
         # Returns initial state
         # James Note: Implemented stacking from reset
@@ -31,30 +47,40 @@ class Atari(object):
         return self.output
 
     def num_actions_available(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         # Return total number of actions
         return self.env.action_space.n
 
     def get_preprocessed_frame(self, observation):
+        """[summary]
+
+        Args:
+            observation ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         # Convert image to grayscale
         # Rescale image
         # James Note: Rewrote this method to return a uint8 and expand the dims
-        # image = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
-        # image = image[26:, :]
-        # image = cv2.resize(image, (self.resized_height, self.resized_width))
-
         img = observation[34:-16, :, :]
 
         # resize image
         img = cv2.resize(img, (84,84))
-
         img = img.mean(-1,keepdims=True)
-
-        # img = img.astype('float32') / 255.
-        return img
-        # return np.expand_dims(image, axis=-1).astype("uint8")
+        return img.astype("uint8")
 
 
     def get_action_meanings(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         # Prints meaings of all possible actions
         return self.env.get_action_meanings()
 
@@ -98,6 +124,7 @@ class Atari(object):
         # If the num of stacks is correct then we concat
         assert len(self._frame_stack) == self.frame_skip or self.output is not None, "Must Reset Env To Step"
         self.output = np.concatenate(self._frame_stack, axis=-1)
+
         if plot_frames:
             import matplotlib.pyplot as plt
             f, axarr = plt.subplots(2,2)
@@ -116,7 +143,8 @@ class Atari(object):
             plt.show()
 
         # Clip the reward
-        total_reward = np.clip(total_reward, -1, 1)
+        if self.clip_reward:
+            total_reward = np.clip(total_reward, -1, 1)
 
         return self.output, total_reward, done, info
 
@@ -126,6 +154,6 @@ class Atari(object):
 
 
 if __name__ == "__main__":
-    game = Atari("Breakout-v4", 10000, 84, 84)
+    game = Atari("Breakout-v4", 84, 84)
     game.reset()
     print(game.step(0, plot_frames=True)[0].shape)

@@ -4,6 +4,12 @@ import pickle
 
 class DeepQLog(object):
     def __init__(self, log_threshold = 1, log_path="agent_log.csv"):
+        """[summary]
+
+        Args:
+            log_threshold (int, optional): [description]. Defaults to 1.
+            log_path (str, optional): [description]. Defaults to "agent_log.csv".
+        """
         self.rows = []
         self.labels = None
         self.log_threshold = log_threshold
@@ -14,7 +20,8 @@ class DeepQLog(object):
         """[summary]
 
         Args:
-            log_name ([type]): [description]
+            col_labels ([type]): [description]
+            values ([type]): [description]
         """
 
         # Initialize our labels

@@ -125,12 +125,9 @@ class DeepQNetwork(object):
         return self.network.predict(np.asarray(state_t))
 
     def sample_actions(self, qvalues):
-        epsilon = self.epsilon
-        batch_size, n_actions = qvalues.shape
-        random_actions = np.random.choice(n_actions, size=batch_size)
+        random_actions = np.random.choice(n_actions, size=4)
         best_actions = qvalues.argmax(axis=-1)
-        should_explore = np.random.choice([0, 1], batch_size, p = [1-epsilon, epsilon])
-        return np.where(should_explore, random_actions, best_actions)
+        return random_actions if np.random.uniform(0, 1) < self.epsilon else best_actions
 
 #Evaluate agents performance, in a number of games
 def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
@@ -159,9 +156,12 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
             # plt.show()
             env2.render()
 
+            if np.random.random() > agent.epsilon:
+                qvalues = agent.get_qvalues([s])
+                action = qvalues.argmax(axis=-1)[0]
+            else:
+                action = np.random.randint(0, env2.action_space_size)
 
-            qvalues = agent.get_qvalues([s])
-            action = qvalues.argmax(axis=-1)[0] if greedy else agent.sample_actions(qvalues)[0]
             s, r, done, _ = env2.step(action)
             reward += r
             if done:
@@ -180,9 +180,9 @@ if __name__ == '__main__':
     n_actions = env.action_space.n
     state_dim = env.observation_space.shape
 
-    agent = DeepQNetwork(n_actions, epsilon=0.5)
+    agent = DeepQNetwork(n_actions, epsilon=1)
     agent.network.load_weights('dqn_model_og.h5')
-    agent.epsilon = 0.001
-    print(evaluate(env, agent, n_games=1))
+    agent.epsilon = 0.01
+    print(evaluate(env, agent, n_games=10))
 
 

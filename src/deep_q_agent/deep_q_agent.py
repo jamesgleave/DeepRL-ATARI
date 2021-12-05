@@ -1,12 +1,13 @@
+import os
+import json
 import pickle
 import numpy as np
 from tqdm import tqdm
+from tensorflow import keras
 from collections import deque
 from src.atari_env.atari import Atari
 from src.deep_q_agent.agent_logger import DeepQLog
 from src.deep_q_network.deep_q_network import DeepQNetwork
-
-import random
 
 
 class DeepQAgent(object):
@@ -14,7 +15,6 @@ class DeepQAgent(object):
                  game: Atari,
                  model: DeepQNetwork,
                  gamma: float,
-                 alpha: float,
                  epsilon: float,
                  replay_memory_size: int,
                  main_model_train_horizon: int,
@@ -34,7 +34,6 @@ class DeepQAgent(object):
             game (Atari): [description]
             model (DeepQNetwork): [description]
             gamma (float): [description]
-            alpha (float): [description]
             epsilon (float): [description]
             replay_memory_size (int): [description]
             main_model_train_horizon (int): [description]
@@ -47,8 +46,6 @@ class DeepQAgent(object):
             save_name (str, optional): [description]. Defaults to "deep_q".
             save_frequency (int, optional): Number of episodes between saving agent. Defaults to 100.
         """
-
-        super().__init__()
 
         # Save the main model
         self.main_model = model
@@ -67,11 +64,13 @@ class DeepQAgent(object):
         self.step_count = 0
         self.exploration_steps = exploration_steps
 
-        # Store gamma and alpha
+        # Store gamma
+        assert 0 < gamma < 1, "Gamma must be 0 < gamma < 1"
         self.gamma = gamma
-        self.alpha = alpha
 
         # Setup our epsilon values
+        assert 0 <= epsilon <= 1, "Epsilon must be 0 < epsilon < 1"
+        assert 0 <= min_epsilon <= epsilon, "Epsilon must be 0 < min_epsilon < epsilon"
         self.max_epsilon = epsilon
         self.min_epsilon = min_epsilon
         self.current_epsilon = epsilon
@@ -160,8 +159,8 @@ class DeepQAgent(object):
                 # Get the result of taking our action, which returns a stacked state
                 new_state, reward, done, info = self.game.step(action, False)
 
-                # Add to the total reward for the episode(clip between -1, 1)
-                total_episode_reward += np.clip(reward, -1, 1)
+                # Add to the total reward for the episode
+                total_episode_reward += reward
 
                 # Render the game if we want to
                 if show_game and episode % 10 == 0:
@@ -183,7 +182,9 @@ class DeepQAgent(object):
 
                 # Update the frame counter
                 self.step_count += 1
-                pbar.update(1)
+
+            # Update the progress bar with the number of steps in the episode
+            pbar.update(current_step)
 
             print(f"Episode {episode} Complete")
             print(f"  Total Episode Rewards: {total_episode_reward}")
@@ -208,16 +209,25 @@ class DeepQAgent(object):
                 pbar.close()
                 return
 
-    def get_action(self, state: np.array) -> int:
+    def get_action(self, state: np.array, inference_epsilon=None) -> int:
         """[summary]
 
         Args:
             state (np.array): [description]
+            inference_epsilon ([type], optional): [description]. Defaults to None.
 
         Returns:
             int: [description]
         """
-        if np.random.random() > self.current_epsilon:
+
+        # Check if we are running inference
+        if inference_epsilon is None:
+            eps = self.current_epsilon
+        else:
+            eps = inference_epsilon
+
+        # Run epsilon greedy
+        if np.random.random() > eps:
             return np.argmax(self.__get_pred_main(np.expand_dims(state, axis=0)))
         return np.random.randint(0, self.game.action_space_size)
 
@@ -232,11 +242,12 @@ class DeepQAgent(object):
             return
 
         # Get a mini batch from the memory
-        # idx = np.random.choice(len(self.replay_memory), self.main_model.batch_size)
+        idx = np.random.choice(len(self.replay_memory), self.main_model.batch_size)
         batch = []
         states = []
         states_prime = []
-        for memory_item in random.sample(self.replay_memory, self.main_model.batch_size):
+        for i in idx:
+            memory_item = self.replay_memory[i]
             batch.append(memory_item)
             states.append(memory_item[0])
             states_prime.append(memory_item[3])
@@ -300,22 +311,15 @@ class DeepQAgent(object):
         Args:
             filename ([type]): [description]
         """
-        # Lazy load our libraries for saving
-        import json
-        import os
-        import shutil
-
-
-        # We remove a save if it shares the same name
-        if os.path.exists(filename):
-            shutil.rmtree(filename)
-
-        # Make the dir for the save
-        os.mkdir(filename)
+        # Check if we have a dir already for saving
+        if not os.path.exists(filename):
+            # Make the dir for the save
+            os.mkdir(filename)
 
         # Save the params
         info = {}
         with open(f"{filename}/params.json", "w") as f:
+            # Polulate a json
             info["min_eps"] = self.min_epsilon
             info["epsilon"] = self.current_epsilon
             info["max_epsilon"] = self.max_epsilon
@@ -334,13 +338,9 @@ class DeepQAgent(object):
         with open(f"{filename}/replay_memory", "wb") as dq:
             pickle.dump(self.replay_memory, dq)
 
-        # Save the logger
-        with open(f"{filename}/replay_memory", "wb") as dq:
-            pickle.dump(self.replay_memory, dq)
-
         # And the models
-        self.main_model.Model.save(f"{filename}/main_model")
-        self.target_model.Model.save(f"{filename}/target_model")
+        self.main_model.Model.save(f"{filename}/main_model.h5")
+        self.target_model.Model.save(f"{filename}/target_model.h5")
 
     def load(self, filepath):
         """
@@ -349,7 +349,6 @@ class DeepQAgent(object):
         Args:
             filepath ([type]): [description]
         """
-        import json
         info = json.load(open(f"{filepath}/params.json", "r"))
         self.min_epsilon = info["min_eps"]
         self.current_epsilon = info["epsilon"]
@@ -361,26 +360,16 @@ class DeepQAgent(object):
         self.main_model_train_horizon = info["main_model_train_horizon"]
         self.epsilon_decay = info["epsilon_decay"]
 
-
         # Load the replay memory
         with open(f"{filepath}/replay_memory", "rb") as dq:
             self.replay_memory = pickle.load(dq)
 
-        # And the models
-        from tensorflow import keras
-        self.main_model.Model.set_weights(keras.models.load_model(f"{filepath}/main_model").get_weights())
-        self.target_model.Model.set_weights(keras.models.load_model(f"{filepath}/target_model").get_weights())
+        # Save the models in .h5 format (to stay consistent)
+        self.main_model.Model.set_weights(keras.models.load_model(f"{filepath}/main_model.h5").get_weights())
+        self.target_model.Model.set_weights(keras.models.load_model(f"{filepath}/target_model.h5").get_weights())
 
         # Set up the labels to avoid overwriting any saved data
         self.logger.labels = ["episode", "epsilon", "step_count", "reward", "replay_memory_size"]
-
-
-
-    def __eps_exponential_decay(self):
-        """[summary]
-        """
-        self.current_epsilon *= self.epsilon_decay
-        self.current_epsilon = max(self.min_epsilon, self.current_epsilon)
 
     def __eps_linear_decay(self):
         self.current_epsilon -= self.epsilon_decay
