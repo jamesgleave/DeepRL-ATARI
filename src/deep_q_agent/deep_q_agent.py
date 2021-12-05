@@ -23,28 +23,29 @@ class DeepQAgent(object):
 
                  min_replay_memory_size: int = None,
                  target_model: DeepQNetwork = None,
-                 epsilon_decay: float = None,
+                 epsilon_decay: float = 0.9/100_000,
                  min_epsilon: float = 0.1,
                  save_name = "deep_q_agent.csv",
                  save_frequency = 100
                  ):
-        """[summary]
+        """
+        Our implementation of a deepq agent.
 
         Args:
-            game (Atari): [description]
-            model (DeepQNetwork): [description]
-            gamma (float): [description]
-            epsilon (float): [description]
-            replay_memory_size (int): [description]
-            main_model_train_horizon (int): [description]
-            target_update_horizon (int): [description]
+            game (Atari): An Atari env wrapper object
+            model (DeepQNetwork): The model wrapper used for the deepq agent
+            gamma (float): The discount factor
+            epsilon (float): The starting epsilon for the agent
+            replay_memory_size (int): The max size of the agents replay memory
+            main_model_train_horizon (int): The number of steps before the model is updated (should be same as frame skip)
+            target_update_horizon (int): The number of steps before the target model's weights are updated
             exploration_steps (int): Number of steps before starting to train.
-            min_replay_memory_size (int, optional): [description]. Defaults to replay_memory_size / 50.
-            target_model (DeepQNetwork, optional): [description]. Defaults to model.clone().
-            epsilon_decay (float, optional): [description]. Defaults to 0.99975.
-            min_epsilon (float, optional): [description]. Defaults to 0.1.
-            save_name (str, optional): [description]. Defaults to "deep_q".
-            save_frequency (int, optional): Number of episodes between saving agent. Defaults to 100.
+            min_replay_memory_size (int, optional): The min size of the replay memory before sampling. Defaults to batch size
+            target_model (DeepQNetwork, optional): Defaults to model.clone()
+            epsilon_decay (float, optional): The amount epsilon will decay every step. Defaults to 0.9/100_000
+            min_epsilon (float, optional): The smallest value epsilon can reach. Defaults to 0.1.
+            save_name (str, optional): The name of the csv file used for logging. Defaults to "deep_q".
+            save_frequency (int, optional): Number of episodes between saving agent. Defaults to 100
         """
 
         # Save the main model
@@ -91,7 +92,8 @@ class DeepQAgent(object):
         self.logger = DeepQLog(log_path=save_name)
 
     def __update_replay_memory(self, transition: tuple):
-        """[summary]
+        """
+        Updates the agent's memory
 
         Args:
             transition (tuple): tuple(state, action, reward, state_prime, done)
@@ -99,7 +101,8 @@ class DeepQAgent(object):
         self.replay_memory.append(transition)
 
     def __get_pred_main(self, state: np.array) -> np.array:
-        """[summary]
+        """
+        Returns the main model's prediction given a state
 
         Args:
             state (np.array):
@@ -110,7 +113,8 @@ class DeepQAgent(object):
         return self.main_model.predict((state / 255.0).astype(np.float32))
 
     def __get_pred_target(self, state: np.array) -> np.array:
-        """[summary]
+        """
+        Returns the target model's prediction given a state
 
         Args:
             state (np.array):
@@ -120,13 +124,15 @@ class DeepQAgent(object):
         """
         return self.target_model.predict((state / 255.0).astype(np.float32))
 
-    def train(self, max_episodes, max_frames, frames_per_epoch=0, show_game=False, verbose=1):
-        """[summary]
+    def train(self, max_episodes: int, max_frames: int, show_game: bool=False, verbose: int=1):
+        """
+        Trains the agent
 
         Args:
-            max_episodes ([type]): [description]
-            show_game (bool, optional): [description]. Defaults to False.
-            verbose (int, optional): [description]. Defaults to 1.
+            max_episodes (int): Number of episodes to train with
+            max_frames (int): Max number of steps to train with
+            show_game (bool, optional): If true, every 10th episode will be rendered. Defaults to False.
+            verbose (int, optional): How much information to be printed. Defaults to 1.
         """
 
         if verbose > 0:
@@ -157,7 +163,7 @@ class DeepQAgent(object):
 
                 # Get the result of taking our action, which returns a stacked state
                 new_state, reward, done, info = self.game.step(action, False)
-                
+
                 # Update the progress bar with the number of steps in the episode
                 pbar.update(1)
 
@@ -208,10 +214,10 @@ class DeepQAgent(object):
                 pbar.close()
                 return
 
-    def evaluate(self, epsilon=None, n_games=1, greedy=False, max_steps=10_000):
+    def evaluate(self, epsilon=None, n_games=1, greedy=False, max_steps=10_000, render=False):
         """
-        Evaluates the agent by running it through multiple runs of the game and returning 
-        the average reward. 
+        Evaluates the agent by running it through multiple runs of the game and returning
+        the average reward.
 
         Args:
             epsilon (float, optional): Can pass in epsilon to use or will use the current_epsilon. Defaults to None.
@@ -229,7 +235,7 @@ class DeepQAgent(object):
             total_r = 0 # keeps track of the total reward
             for _ in range(max_steps):
                 # Predicting the q_values for each action using the model
-                q_vals = self.main_model.predict(np.asarray([s]))
+                q_vals = self.__get_pred_main(np.asarray([s]))
 
                 if greedy:
                     # picks the max q value
@@ -245,23 +251,27 @@ class DeepQAgent(object):
                     a = np.where(choice, rand_a, max_a)[0]
 
                 s, r, done, _ = self.game.step(a)
-                total_r += r 
+                total_r += r
 
-                if done: 
+                if render:
+                    self.game.render()
+
+                if done:
                     s = self.game.reset()
                     break
             rewards.append(total_r)
         return np.mean(rewards)
 
     def get_action(self, state: np.array, inference_epsilon=None) -> int:
-        """[summary]
+        """
+        Returns an epsilon greedy action.
 
         Args:
-            state (np.array): [description]
-            inference_epsilon ([type], optional): [description]. Defaults to None.
+            state (np.array): The state
+            inference_epsilon ([float], optional): If a float is passed, the value will override the agent's epsilon value. Defaults to None.
 
         Returns:
-            int: [description]
+            int: An action between 0 and (num actions - 1)
         """
 
         # Check if we are running inference
@@ -276,10 +286,11 @@ class DeepQAgent(object):
         return np.random.randint(0, self.game.action_space_size)
 
     def __train_network(self, verbose):
-        """[summary]
+        """
+        Sample a batch from the replay memory and train the network.
 
         Args:
-            terminal_state ([type]): [description]
+            verbose ([int]): How muhc information to print (debugging)
         """
         # Allow the agent to explore before training
         if len(self.replay_memory) <= self.min_replay_memory_size or self.step_count <= self.exploration_steps:
@@ -391,7 +402,7 @@ class DeepQAgent(object):
         Loads parameters from previous run.
 
         Args:
-            filepath ([type]): [description]
+            filepath ([type]): The path to the saved agent directory
         """
         info = json.load(open(f"{filepath}/params.json", "r"))
         self.min_epsilon = info["min_eps"]
@@ -416,5 +427,8 @@ class DeepQAgent(object):
         self.logger.labels = ["episode", "epsilon", "step_count", "reward", "replay_memory_size"]
 
     def __eps_linear_decay(self):
+        """
+        Decays epsilon based on the epsilon decay
+        """
         self.current_epsilon -= self.epsilon_decay
         self.current_epsilon = max(self.min_epsilon, self.current_epsilon)

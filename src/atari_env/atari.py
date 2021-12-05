@@ -8,13 +8,14 @@ from collections import deque
 
 
 class Atari(object):
-    def __init__(self, game: str, resized_width: int, resized_height: int, frame_skip=4, clip_reward: bool = True):
+    def __init__(self, game: str, resized_width: int, resized_height: int, frame_skip=4, clip_reward: bool = True, temporal_flip: bool=False):
         """[summary]
 
         Args:
             game (str): [description]
             resized_width (int): [description]
             resized_height (int): [description]
+            temporal_flip ([type]): Whether the images are stacked in descending or ascending time order.
             frame_skip (int, optional): [description]. Defaults to 4.
             clip_reward (bool, optional): [description]. Defaults to True.
         """
@@ -30,6 +31,9 @@ class Atari(object):
 
         # Also clip reward
         self.clip_reward = clip_reward
+
+        # Store the flip value
+        self.temporal_flip = temporal_flip
 
     def reset(self):
         """[summary]
@@ -154,7 +158,10 @@ class Atari(object):
         if self.clip_reward:
             total_reward = np.clip(total_reward, -1, 1)
 
-        return self.output[:, :, ::-1], total_reward, done, info
+        if self.temporal_flip:
+            return self.output, total_reward, done, info
+        else:
+            return self.output[:, :, ::-1], total_reward, done, info
 
     def render(self):
         # Render the game state
@@ -165,4 +172,3 @@ if __name__ == "__main__":
     game = Atari("Breakout-v4", 84, 84)
     game.reset()
     print(game.step(0, plot_frames=True)[0].shape)
-    print

@@ -89,7 +89,7 @@ def display(filepath: str,
 
 
 
-json_file = "/Users/martingleave/Desktop/School Work/UNIVERSITY/fourth_year/first_sem/CISC474/Projects/DeepRL-ATARI/src/extras/dqn_BreakoutNoFrameSkip-v4_log.json"
+json_file = "/Users/martingleave/Desktop/School Work/UNIVERSITY/fourth_year/first_sem/CISC474/Projects/DeepRL-ATARI/src/extras/logs/dqn_Breakout-v0_log-paper.json"
 csv_file = "/Users/martingleave/Desktop/School Work/UNIVERSITY/fourth_year/first_sem/CISC474/Projects/DeepRL-ATARI/src/extras/deep_q_agent.csv"
 # a1 = display(csv_file, "index", "episode_reward", 50, background_alpha=0.75, x_y_label=("Episode", "Reward"), title="Keras-rl", show=True)
-a1 = display(csv_file, "index", "reward", 50, background_alpha=0.75, x_y_label=("Episode", "Reward"), title="Keras-rl", show=True)
+a1 = display(json_file, "index", "episode_reward", 50, background_alpha=0.75, x_y_label=("Episode", "Reward"), title="Keras-rl Paper Implementation", show=True)

@@ -4,7 +4,8 @@ import pickle
 
 class DeepQLog(object):
     def __init__(self, log_threshold = 1, log_path="agent_log.csv"):
-        """[summary]
+        """
+        Used as a csv logger for the agent.
 
         Args:
             log_threshold (int, optional): [description]. Defaults to 1.
@@ -17,7 +18,10 @@ class DeepQLog(object):
         self.log_file_reference = None
 
     def __call__(self, col_labels, values, **kwargs):
-        """[summary]
+        """
+        Logs the agents progress.
+        If the logger has been called more than self.log_threshold,
+        a csv will either be created or appended to.
 
         Args:
             col_labels ([type]): [description]
