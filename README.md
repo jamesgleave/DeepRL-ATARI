@@ -7,13 +7,15 @@ PAPER: https://arxiv.org/pdf/1312.5602.pdf
 
 
 # Installation requirements
+
+```sh
 - pip instal gym[atari] 
 - pip install numpy
 - pip install python2.7.3
 - pip install tensorflow
 - pip install matplotlib
 - pip install opencv
-
+```
 
 # Attain Sample Images and Stacking 
 - Run atari.py to get single frames, and stacked frames from the Atari breakout-v0 enviroment.
