@@ -148,7 +148,7 @@ class DeepQAgent(object):
             rows = [episode, self.current_epsilon, self.step_count, total_episode_reward, len(self.replay_memory)]
             self.logger(labels, rows)
 
-            while not done and self.game.max_steps > current_step:
+            while not done:
                 # Choose an action and step with it
                 action = self.get_action(current_state)
 
@@ -285,7 +285,7 @@ class DeepQAgent(object):
 
         # Once we have completed enough frames, reset the counter and update the target
         if self.step_count % self.target_update_horizon == 0:
-            self.target_model.set_weights(self.main_model)
+            self.target_model.Model.set_weights(self.main_model.Model.get_weights())
 
             if verbose > 0:
                 print(f"Target Model Updated At Frame {self.step_count} with {len(self.replay_memory)} memory items.")
