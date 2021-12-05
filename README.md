@@ -28,5 +28,5 @@ To stay true to the DeepMind paper, we implement their Deep Q-learning method wi
 # Main Model
 We have 3 different models that can be run. 
 ```sh
-python evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}
+python evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}  [--games GAMES] [--render]
 ```
