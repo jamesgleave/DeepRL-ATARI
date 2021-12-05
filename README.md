@@ -11,7 +11,7 @@ PAPER: https://arxiv.org/pdf/1312.5602.pdf
 ```sh
 - pip instal gym[atari] 
 - pip install numpy
-- pip install python2.7.3
+- pip install python3.7.3
 - pip install tensorflow
 - pip install matplotlib
 - pip install opencv
