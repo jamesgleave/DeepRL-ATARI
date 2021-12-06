@@ -1,6 +1,6 @@
 from src import atari
 from src import deep_q_agent
-from src import deep_q_network, playground
+from src import deep_q_network
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
