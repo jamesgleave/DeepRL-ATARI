@@ -55,3 +55,7 @@ We have 2 different models that can be evaluated.
 ```sh
 python3 evaluate_brick_breaker.py  --model {ours,transfer}  [--games GAMES] [--render]
 ```
+For example, to evaluate our model and get the average reward for 5 games while rendering each game:
+```sh
+python3 evaluate_brick_breaker.py  --model ours  --games 5 --render
+```
