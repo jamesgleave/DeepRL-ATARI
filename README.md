@@ -36,6 +36,8 @@ save_frequency |250
 - pip install tensorflow
 - pip install matplotlib
 - pip install opencv
+- pip install pickle
+- pip install tqdm
 ```
 
 # Attain Sample Images and Stacking 
