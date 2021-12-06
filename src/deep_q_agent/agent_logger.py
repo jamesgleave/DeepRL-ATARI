@@ -24,8 +24,8 @@ class DeepQLog(object):
         a csv will either be created or appended to.
 
         Args:
-            col_labels ([type]): [description]
-            values ([type]): [description]
+            col_labels ([list of strings]): Labels for the colums
+            values ([list]): List of values
         """
 
         # Initialize our labels
