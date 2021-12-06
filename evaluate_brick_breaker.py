@@ -18,7 +18,6 @@ if __name__ == "__main__":
     # Create the game
     game = atari.Atari("BreakoutNoFrameskip-v4", 84, 84, frame_skip=4, clip_reward=False)
 
-
     if args.model == "transfer":
         weight_path = "src/extras/logs/dqn_model_og.h5"
         model_config = "2015"
@@ -44,7 +43,6 @@ if __name__ == "__main__":
 
     network = deep_q_network.DeepQNetwork(game.action_space_size, 0.00085, BATCH_SIZE, model_config=model_config)
     network.Model.summary()
-
     agent = deep_q_agent.DeepQAgent(game=game,
                                     model=network,
                                     gamma=0.99,

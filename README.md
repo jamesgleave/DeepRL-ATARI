@@ -34,7 +34,7 @@ pip install -r requirements.txt
 ```
 If any issues occur, make sure all these dependencies are installed
 ```sh
-- pip instal gym[atari] 
+- pip install gym[atari] 
 - pip install numpy
 - pip install python3.7.3
 - pip install tensorflow
