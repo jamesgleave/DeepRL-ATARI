@@ -35,6 +35,7 @@ pip install -r requirements.txt
 If any issues occur, make sure all these dependencies are installed
 ```sh
 - pip install gym[atari]
+- pip install gym[accept-rom-license]
 - pip install numpy
 - pip install tensorflow
 - pip install matplotlib
