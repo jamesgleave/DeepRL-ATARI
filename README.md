@@ -28,7 +28,11 @@ save_frequency |250
 
 
 # Installation requirements
-
+To run all dependencies run the code below
+```sh
+pip install -r requirements.txt
+```
+If any issues occur, make sure all these dependencies are installed
 ```sh
 - pip instal gym[atari] 
 - pip install numpy
@@ -38,6 +42,7 @@ save_frequency |250
 - pip install opencv
 - pip install pickle
 - pip install tqdm
+- pip install seaborn
 ```
 
 # Attain Sample Images and Stacking 
