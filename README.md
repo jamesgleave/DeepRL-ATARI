@@ -43,6 +43,7 @@ If any issues occur, make sure all these dependencies are installed
 - pip install tqdm
 - pip install seaborn
 - pip install scipy
+- pip install pandas
 ```
 
 # Attain Sample Images and Stacking
