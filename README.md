@@ -47,11 +47,11 @@ If any issues occur, make sure all these dependencies are installed
 ```
 
 # Attain Sample Images and Stacking 
-- Run atari.py to get single frames, and stacked frames from the Atari Breakout-v0 enviroment.
+- Run atari.py to get single frames, and stacked frames from the Atari BreakoutNoFrameskip-v4 enviroment.
 
 
 # Evaluation
 We have 3 different models that can be evaluated. 
 ```sh
-python evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}  [--games GAMES] [--render]
+python3 evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}  [--games GAMES] [--render]
 ```
