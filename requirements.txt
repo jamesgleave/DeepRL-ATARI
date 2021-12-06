@@ -1,5 +1,5 @@
 ###### Requirements with Version Specifiers ######
-gym[atari] 
+gym[atari]
 numpy
 python
 tensorflow >= 2.5.0
@@ -7,3 +7,4 @@ matplotlib
 opencv
 tqdm
 seaborn
+scipy
