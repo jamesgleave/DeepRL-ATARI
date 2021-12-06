@@ -16,7 +16,7 @@ You can configure the agent with different parameters this is listed below.
  Agent | Configuration 
 --- | --- | --- 
 Game | kernel="rbf",C=13, gamma='scale',97 Component PCA 
-Model | Gini Index|
+Model | Gini Index
 Gamma | 1
 Epsilon| 1
 Epsilon Decay | EPS_DECAY
