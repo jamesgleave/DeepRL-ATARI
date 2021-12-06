@@ -51,7 +51,7 @@ If any issues occur, make sure all these dependencies are installed
 
 
 # Evaluation
-We have 3 different models that can be evaluated. 
+We have 2 different models that can be evaluated. 
 ```sh
 python3 evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}  [--games GAMES] [--render]
 ```
