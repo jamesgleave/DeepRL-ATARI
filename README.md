@@ -22,7 +22,7 @@ To stay true to the DeepMind paper, we implement their Deep Q-learning method wi
 ```
 
 # Attain Sample Images and Stacking 
-- Run atari.py to get single frames, and stacked frames from the Atari breakout-v0 enviroment.
+- Run atari.py to get single frames, and stacked frames from the Atari Breakout-v0 enviroment.
 
 
 # Main Model
