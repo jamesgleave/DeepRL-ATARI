@@ -1,5 +1,6 @@
 ###### Requirements with Version Specifiers ######
 gym[atari]
+gym[accept-rom-license]
 numpy
 tensorflow >= 2.5.0
 matplotlib
