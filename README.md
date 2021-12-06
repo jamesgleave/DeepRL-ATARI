@@ -13,8 +13,8 @@ To stay true to the DeepMind paper, we implement their Deep Q-learning method wi
 To train our model use run the train_brick_breaker.py
 You can configure the agent with different parameters this is listed below.
 
- Agent | Configuration 
---- | --- | --- 
+Agent | Configuration |
+--- | --- | 
 Game | kernel="rbf",C=13, gamma='scale',97 Component PCA 
 Model | Gini Index
 Gamma | 1
