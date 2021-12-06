@@ -8,24 +8,6 @@ To stay true to the DeepMind paper, we implemented their Deep Q-learning method 
 
 ![Group 7 (1)](https://user-images.githubusercontent.com/14239415/144766160-c314b329-e5d8-4787-979e-e8c55b651241.png)
 
-# Training
-To train our model, run the train_brick_breaker.py.
-You can configure the agent with different parameters. The list below are the parameters we used during training
-
-Parameters | Configuration |
---- | --- |
-game | -
-model | -
-gamma | 0.99
-epsilon| 1
-epsilon_decay | 0.9/500_000
-replay_memory_size| 500_000
-exploration_steps |100_000
-target_update_horizon| 10_000
-main_model_train_horizon| 4
-min_replay_memory_size |32
-save_frequency |250
-
 
 # Installation requirements
 To run all dependencies run the code below
@@ -47,9 +29,23 @@ If any issues occur, make sure all these dependencies are installed
 - pip install pandas
 ```
 
-# Attain Sample Images and Stacking
-- Run atari.py to get single frames, and stacked frames from the Atari BreakoutNoFrameskip-v4 enviroment.
+# Training
+To train our model, run the train_brick_breaker.py.
+You can configure the agent with different parameters. The list below are the parameters we used during training
 
+Parameters | Configuration |
+--- | --- |
+game | -
+model | -
+gamma | 0.99
+epsilon| 1
+epsilon_decay | 0.9/500_000
+replay_memory_size| 500_000
+exploration_steps |100_000
+target_update_horizon| 10_000
+main_model_train_horizon| 4
+min_replay_memory_size |32
+save_frequency |250
 
 # Evaluation
 We have 2 different models that can be evaluated ours and the transfered weights one. They can be run with these calls:
