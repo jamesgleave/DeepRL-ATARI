@@ -26,6 +26,14 @@ target_update_horizon| 10_000
 main_model_train_horizon| 4 
 min_replay_memory_size |BATCH_SIZE 
 save_frequency |250 
+
+
+
+Algorithms | Configuration | 
+--- | --- | 
+Game | kernel="rbf",C=13, gamma='scale',97 Component PCA 
+Random Forest | Gini Index
+XG boosting| gamma=0, max_tree_depth=3, n_estimatror=10
 # Installation requirements
 
 ```sh
