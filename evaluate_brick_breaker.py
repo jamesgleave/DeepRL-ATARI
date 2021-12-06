@@ -10,7 +10,7 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, choices=["ours", "transfer"])
-    parser.add_argument("--games", required=False, default=1)
+    parser.add_argument("--games", required=False, default=1, type=int)
     parser.add_argument("--render", required=False, default=False, action="store_true")
 
     args = parser.parse_args()
@@ -22,12 +22,20 @@ if __name__ == "__main__":
     if args.model == "transfer":
         weight_path = "src/extras/logs/dqn_model_og.h5"
         model_config = "2015"
+        eps = 0.01
+
     elif args.model == "ours":
         weight_path = "src/extras/logs/main_model_weights.h5f"
         model_config = "2013"
 
         # This flips the order of the frames in the 84x84x4 image
         game.temporal_flip = True
+
+        # Seed for reproduceability
+        np.random.seed(42)
+
+        # Set the epsilon like the paper
+        eps = 0.05
 
     # Setup the default values that we use
     BATCH_SIZE = 32
@@ -51,17 +59,6 @@ if __name__ == "__main__":
                                     save_frequency=250)
 
     network.Model.load_weights(weight_path)
-
-    total_rewards = []
-    for i in range(100):
-        mean_rewards = agent.evaluate(epsilon=0.01, n_games=args.games, render=args.render)
-        print(f"Mean Rewards: {mean_rewards}")
-
-        total_rewards.append(mean_rewards)
-
-    with open("transfer_results.csv", "w") as f:
-        f.write("game,reward\n")
-        for i, r in enumerate(total_rewards):
-            f.write(f"{i},{r}\n")
-
+    mean_rewards = agent.evaluate(epsilon=eps, n_games=args.games, render=args.render)
+    print(f"Mean Rewards: {mean_rewards}")
 
