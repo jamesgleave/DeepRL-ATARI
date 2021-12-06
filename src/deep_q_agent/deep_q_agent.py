@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import time
 import numpy as np
 from tqdm import tqdm
 from tensorflow import keras
@@ -208,7 +209,7 @@ class DeepQAgent(object):
                 pbar.close()
                 return
 
-    def evaluate(self, epsilon=None, n_games=1, greedy=False, max_steps=10_000):
+    def evaluate(self, epsilon=None, n_games=1, greedy=False, max_steps=10_000, render=False):
         """
         Evaluates the agent by running it through multiple runs of the game and returning 
         the average reward. 
@@ -218,6 +219,7 @@ class DeepQAgent(object):
             n_games (int, optional): Number of games to average over. Defaults to 1.
             greedy (bool, optional): If true then it picks the action that gives the max reward everytime (not epsilon greedy). Defaults to False.
             max_steps (int, optional): Max number of steps for each game. Defaults to 10_000.
+            render (bool, optional): whether or not to render the environment. Defaults to False.
 
         Returns:
             float: the average total reward across all the games.
@@ -229,7 +231,7 @@ class DeepQAgent(object):
             total_r = 0 # keeps track of the total reward
             for _ in range(max_steps):
                 # Predicting the q_values for each action using the model
-                q_vals = self.main_model.predict(np.asarray([s]))
+                q_vals = self.__get_pred_main(np.array([s]))
 
                 if greedy:
                     # picks the max q value
@@ -246,7 +248,11 @@ class DeepQAgent(object):
 
                 s, r, done, _ = self.game.step(a)
                 total_r += r 
-
+                
+                if render: 
+                    self.game.render()
+                    time.sleep(0.01)
+                
                 if done: 
                     s = self.game.reset()
                     break
