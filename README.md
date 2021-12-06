@@ -44,8 +44,8 @@ save_frequency |250
 - Run atari.py to get single frames, and stacked frames from the Atari Breakout-v0 enviroment.
 
 
-# Main Model
-We have 3 different models that can be run. 
+# Evaluation
+We have 3 different models that can be evaluated. 
 ```sh
 python evaluate_brick_breaker.py  --model {ours,transfer,kerasrl}  [--games GAMES] [--render]
 ```
