@@ -43,6 +43,7 @@ If any issues occur, make sure all these dependencies are installed
 - pip install pickle
 - pip install tqdm
 - pip install seaborn
+- pip install scipy
 ```
 
 # Attain Sample Images and Stacking 
