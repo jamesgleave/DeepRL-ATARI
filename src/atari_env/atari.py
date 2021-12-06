@@ -9,7 +9,9 @@ from collections import deque
 
 class Atari(object):
     def __init__(self, game: str, resized_width: int, resized_height: int, frame_skip=4, clip_reward: bool = True, temporal_flip: bool=False):
-        """[summary]
+        """
+
+        The atari environment wrapper class. Performs frame stacking and frame skipping.
 
         Args:
             game (str): [description]
@@ -36,10 +38,11 @@ class Atari(object):
         self.temporal_flip = temporal_flip
 
     def reset(self):
-        """[summary]
+        """
+        Resets the environment and stacks the first n frames
 
         Returns:
-            [type]: [description]
+            [np.array]: Stacked frames
         """
         # Should reset the environment to the begining
         # Returns initial state
@@ -51,7 +54,8 @@ class Atari(object):
         return self.output
 
     def num_actions_available(self):
-        """[summary]
+        """
+        Returns the number of actions available
 
         Returns:
             [type]: [description]
@@ -60,7 +64,8 @@ class Atari(object):
         return self.env.action_space.n
 
     def get_preprocessed_frame(self, observation):
-        """[summary]
+        """
+        Returns a preprocessed frame from an observation
 
         Args:
             observation ([type]): [description]
@@ -78,17 +83,11 @@ class Atari(object):
         img = img.mean(-1,keepdims=True)
         # Return as an unsigned integer to save space
         # Normalization occurs upon model input
-
-        #import matplotlib.pyplot as plt
-        #f, axarr = plt.subplots(2,2)
-        #axarr[0,0].imshow((img[:, :, 0] / 255.0).astype(np.float32),  cmap='gray')
-        #axarr[0,0].set_title("Frame-1")
-
-
         return img.astype("uint8")
 
     def get_action_meanings(self):
-        """[summary]
+        """
+        Returns the meanings of each action
 
         Returns:
             [type]: [description]
@@ -97,14 +96,15 @@ class Atari(object):
         return self.env.get_action_meanings()
 
     def step(self, action: int, plot_frames: bool = False) -> tuple:
-        """[summary]
+        """
+        Take a step in the env. Here is where frame stacking and skipping is done.
 
         Args:
-            action (int): [description]
-            frame_skip (int, optional): [description]. Defaults to 1.
+            action (int): The action the agent is taking
+            plot_frames (bool, optional): If true, the frames will be plotted at each step (only for debugging). Defaults to False.
 
         Returns:
-            tuple: [description]
+            tuple: output, total_reward, done, info
         """
 
         # Note from James
@@ -164,7 +164,9 @@ class Atari(object):
             return self.output[:, :, ::-1], total_reward, done, info
 
     def render(self):
-        # Render the game state
+        """
+        Render the game state
+        """
         self.env.render()
 
 

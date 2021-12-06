@@ -9,7 +9,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", required=True, choices=["ours", "transfer", "kerasrl"])
+    parser.add_argument("--model", required=True, choices=["ours", "transfer"])
     parser.add_argument("--games", required=False, default=1)
     parser.add_argument("--render", required=False, default=False, action="store_true")
 
@@ -22,8 +22,8 @@ if __name__ == "__main__":
     if args.model == "transfer":
         weight_path = "src/extras/logs/dqn_model_og.h5"
         model_config = "2015"
-    elif args.model == "kerasrl":
-        weight_path = "src/extras/logs/dqn_Breakout-v0_weights_1750000.h5f"
+    elif args.model == "ours":
+        weight_path = "src/extras/logs/main_model_weights.h5f"
         model_config = "2013"
 
         # This flips the order of the frames in the 84x84x4 image
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     network.Model.load_weights(weight_path)
 
     total_rewards = []
-    for i in range(10):
+    for i in range(100):
         mean_rewards = agent.evaluate(epsilon=0.01, n_games=args.games, render=args.render)
         print(f"Mean Rewards: {mean_rewards}")
 

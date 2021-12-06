@@ -233,7 +233,7 @@ class DeepQAgent(object):
         s = self.game.reset()
         for _ in range(n_games):
             total_r = 0 # keeps track of the total reward
-            for _ in range(max_steps):
+            for step in range(max_steps):
                 # Predicting the q_values for each action using the model
                 q_vals = self.__get_pred_main(np.asarray([s]))
 
@@ -259,6 +259,7 @@ class DeepQAgent(object):
                 if done:
                     s = self.game.reset()
                     break
+
             rewards.append(total_r)
         return np.mean(rewards)
 

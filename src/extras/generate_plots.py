@@ -8,6 +8,11 @@ import os
 from scipy.ndimage.filters import gaussian_filter1d
 
 
+"""
+James Gleave
+"""
+
+
 
 def display(filepath: str,
             x: str,
@@ -18,6 +23,27 @@ def display(filepath: str,
             x_y_label: tuple = None,
             title: str = None,
             show: bool=False):
+    """
+
+    Display a nice plot!
+
+    Args:
+        filepath (str): path to json or csv
+        x (str): the values on the x axis
+        y (str): the values on the y axis
+        smoothing (float): smoothing factor
+        palette ([type], optional): seaborn palette. Defaults to None.
+        background_alpha (int, optional): alpha value of the filled bounds. Defaults to 1.
+        x_y_label (tuple, optional): labels for x and y axis. Defaults to None.
+        title (str, optional): title for the plot. Defaults to None.
+        show (bool, optional): whether or now to call plt.show(). Defaults to False.
+
+    Raises:
+        ValueError: If a file is not a csv or json it will cause issues
+
+    Returns:
+        [ax]: a plt axes instance
+    """
 
     # Grab the filename and extension
     filename, file_extension = os.path.splitext(filepath)
@@ -92,4 +118,4 @@ def display(filepath: str,
 json_file = "/Users/martingleave/Desktop/School Work/UNIVERSITY/fourth_year/first_sem/CISC474/Projects/DeepRL-ATARI/src/extras/logs/dqn_Breakout-v0_log-paper.json"
 csv_file = "/Users/martingleave/Desktop/School Work/UNIVERSITY/fourth_year/first_sem/CISC474/Projects/DeepRL-ATARI/src/extras/deep_q_agent.csv"
 # a1 = display(csv_file, "index", "episode_reward", 50, background_alpha=0.75, x_y_label=("Episode", "Reward"), title="Keras-rl", show=True)
-a1 = display(json_file, "index", "episode_reward", 50, background_alpha=0.75, x_y_label=("Episode", "Reward"), title="Keras-rl Paper Implementation", show=True)
+a1 = display(json_file, "index", "nb_episode_steps", 25, background_alpha=0.75, x_y_label=("Episode", "Steps Per Episode"), title="Deep Q Learning: Paper Implementation", show=True)
