@@ -13,10 +13,10 @@ To stay true to the DeepMind paper, we implement their Deep Q-learning method wi
 To train our model use run the train_brick_breaker.py
 You can configure the agent with different parameters this is listed below.
 
-Agent | Configuration |
+Parameters | Configuration |
 --- | --- | 
-Game | kernel="rbf",C=13, gamma='scale',97 Component PCA 
-Model | Gini Index
+Game | -
+Model | -
 Gamma | 1
 Epsilon| 1
 Epsilon Decay | EPS_DECAY
@@ -24,7 +24,7 @@ replay_memory_size| 500_000
 exploration_steps |100_000 
 target_update_horizon| 10_000 
 main_model_train_horizon| 4 
-min_replay_memory_size |BATCH_SIZE 
+min_replay_memory_size |32
 save_frequency |250 
 
 
