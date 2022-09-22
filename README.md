@@ -1,7 +1,6 @@
 # DeepRL-ATARI
-DRIVE: https://drive.google.com/drive/folders/1u_tzZSIlvi1BjVqRYS4ewcKxap9kMaDJ?usp=sharing
-
-PAPER: https://arxiv.org/pdf/1312.5602.pdf
+Original Paper: https://arxiv.org/pdf/1312.5602.pdf
+Our Review: https://drive.google.com/file/d/1H-jJGkWA-M2kUMFBSNuFxQU3BJ6rujxg/view?usp=sharing
 
 # About
 To stay true to the DeepMind paper, we implemented their Deep Q-learning method with the same convolutional neural network (CNN) architecture for state-value function approximation. Furthermore, the actual agent itself is a Deep Q-learning agent (DQA) that receives the 84x84 images of the Atari game as inputs and utilizes the network to make decisions on what actions to perform.
